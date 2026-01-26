@@ -1,0 +1,161 @@
+{% extends 'billing/base_dashboard.html' %}
+
+{% block dashboard_content %}
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        
+        <!-- Revenue -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-green-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-wallet text-green-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                            <dd class="text-2xl font-bold text-gray-900">${{ total_revenue }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Pending Invoices</dt>
+                            <dd class="text-2xl font-bold text-gray-900">${{ pending_invoices_amount }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Quotes -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file-signature text-blue-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Sent Quotes</dt>
+                            <dd class="text-2xl font-bold text-gray-900">{{ active_quotes }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-purple-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users text-purple-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
+                            <dd class="text-2xl font-bold text-gray-900">{{ total_customers }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Actions & Recent -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Main Table -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Invoices</h3>
+                    <a href="{% url 'invoice_list' %}" class="text-sm text-brand-600 hover:text-brand-900">View all</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for invoice in recent_invoices %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if invoice.status == 'paid' %}bg-green-100 text-green-800
+                                        {% elif invoice.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ invoice.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.customer.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${{ invoice.total_amount }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'invoice_detail' invoice.pk %}" class="text-brand-600 hover:text-brand-900">Manage</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No recent activity.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
+            <div class="space-y-4">
+                <a href="{% url 'quotation_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <span class="flex items-center">
+                        <i class="fas fa-plus-circle text-brand-500 mr-3"></i> Create New Quote
+                    </span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="{% url 'invoice_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <span class="flex items-center">
+                        <i class="fas fa-file-invoice text-green-500 mr-3"></i> Create Invoice
+                    </span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="{% url 'customer_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <span class="flex items-center">
+                        <i class="fas fa-user-plus text-purple-500 mr-3"></i> Add Customer
+                    </span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+            </div>
+
+            <div class="mt-8">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System Status</h4>
+                <div class="flex items-center text-sm text-green-600">
+                    <i class="fas fa-check-circle mr-2"></i> Operational
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Last backup: Today, 04:00 AM</p>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

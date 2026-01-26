@@ -1,0 +1,75 @@
+{% extends 'billing/base_dashboard.html' %}
+
+{% block dashboard_content %}
+<div class="bg-white shadow rounded-lg p-6">
+    <div class="border-b border-gray-200 pb-4 mb-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">{{ title }}</h3>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Main Quote Info -->
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3 mb-8">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Customer</label>
+                {{ form.customer }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Date</label>
+                {{ form.date }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Status</label>
+                {{ form.status }}
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <h4 class="text-md font-medium text-gray-900 mb-4">Items</h4>
+        {{ formset.management_form }}
+        
+        <div id="formset-container" class="space-y-4">
+            {% for form in formset %}
+            <div class="flex flex-wrap sm:flex-nowrap gap-4 items-end border p-4 rounded-md bg-gray-50 relative formset-row">
+                {{ form.id }}
+                <div class="w-full sm:w-1/4">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Product</label>
+                    {{ form.product }}
+                </div>
+                <div class="w-full sm:w-1/3">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                    {{ form.description }}
+                </div>
+                <div class="w-full sm:w-1/6">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Quantity</label>
+                    {{ form.quantity }}
+                </div>
+                <div class="w-full sm:w-1/6">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Unit Price</label>
+                    {{ form.unit_price }}
+                </div>
+                
+                {% if formset.can_delete %}
+                <div class="flex items-center pb-2">
+                    <label class="inline-flex items-center text-sm text-red-600">
+                        {{ form.DELETE }} <span class="ml-1">Delete</span>
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Hacky JS for adding rows could go here, but for now we rely on extra=1 and saving multiple times or a more complex JS setup. 
+             Ideally we use a JS library for dynamic formsets, but sticking to standard django for simplicity in this turn.
+             We will just rely on 'extra=1' for now, user can save and come back to add more. -->
+        <p class="text-sm text-gray-500 mt-2">To add more items, save and edit again (a new empty row will appear).</p>
+
+        <div class="flex justify-end pt-6 border-t mt-6">
+            <a href="{% url 'quotation_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">Cancel</a>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">Save Quotation</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

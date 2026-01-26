@@ -1,0 +1,41 @@
+{% extends 'billing/base_dashboard.html' %}
+
+{% block dashboard_content %}
+<div class="max-w-xl mx-auto bg-white shadow rounded-lg">
+    <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Record Payment</h3>
+        <p class="mt-1 text-sm text-gray-500">For Invoice #{{ invoice.id }} - {{ invoice.customer.name }}</p>
+    </div>
+    <form method="post" class="p-6 space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Date Received</label>
+                {{ form.date }}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Amount Received ($)</label>
+                {{ form.amount }}
+                <p class="text-xs text-gray-500 mt-1">Outstanding Balance: ${{ invoice.balance_due }}</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Payment Method (e.g., Cash, Transfer, Check)</label>
+                {{ form.payment_method }}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                {{ form.note }}
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-4">
+            <a href="{% url 'invoice_detail' invoice.pk %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 mr-3">Cancel</a>
+            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Record Payment</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
