@@ -16,9 +16,9 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Amount Received ($)</label>
+                <label class="block text-sm font-medium text-gray-700">Amount Received (KES)</label>
                 {{ form.amount }}
-                <p class="text-xs text-gray-500 mt-1">Outstanding Balance: ${{ invoice.balance_due }}</p>
+                <p class="text-xs text-gray-500 mt-1">Outstanding Balance: KES {{ invoice.balance_due }}</p>
             </div>
 
             <div>

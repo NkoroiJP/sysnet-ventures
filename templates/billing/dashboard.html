@@ -14,7 +14,7 @@
                     <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                            <dd class="text-2xl font-bold text-gray-900">${{ total_revenue }}</dd>
+                            <dd class="text-2xl font-bold text-gray-900">KES {{ total_revenue }}</dd>
                         </dl>
                     </div>
                 </div>
@@ -31,7 +31,7 @@
                     <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Pending Invoices</dt>
-                            <dd class="text-2xl font-bold text-gray-900">${{ pending_invoices_amount }}</dd>
+                            <dd class="text-2xl font-bold text-gray-900">KES {{ pending_invoices_amount }}</dd>
                         </dl>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.customer.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${{ invoice.total_amount }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">KES {{ invoice.total_amount }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'invoice_detail' invoice.pk %}" class="text-brand-600 hover:text-brand-900">Manage</a>
                                 </td>
