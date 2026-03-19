@@ -1,5 +1,14 @@
 from django.contrib import admin
-from .models import Customer, Product, Quotation, QuotationItem, Invoice, InvoiceItem, Receipt
+from .models import Customer, Product, Quotation, QuotationItem, Invoice, InvoiceItem, Receipt, CompanyProfile
+
+@admin.register(CompanyProfile)
+class CompanyProfileAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'website')
+
+    def has_add_permission(self, request):
+        if CompanyProfile.objects.exists():
+            return False
+        return super().has_add_permission(request)
 
 class QuotationItemInline(admin.TabularInline):
     model = QuotationItem

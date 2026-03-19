@@ -117,3 +117,21 @@ class Receipt(models.Model):
 
     def __str__(self):
         return f"Receipt #{self.id} for Invoice #{self.invoice.id}"
+
+class CompanyProfile(models.Model):
+    name = models.CharField(max_length=200, default="Sysnet Ventures")
+    logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    website = models.URLField(blank=True)
+    tax_number = models.CharField(max_length=50, blank=True, verbose_name="Tax/PIN Number")
+
+    def __clonable__(self):
+        return False # Ensure only one exists? (I'll handle this in admin or a simple way)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Company Profile"
