@@ -49,16 +49,20 @@
             <a href="{% url 'invoice_update' invoice.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
                 <i class="fas fa-edit mr-2 text-gray-400"></i> Edit
             </a>
-            
+
             {% if invoice.status != 'paid' %}
             <a href="{% url 'add_receipt' invoice.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">
                 <i class="fas fa-money-bill-wave mr-2"></i> Record Payment
             </a>
             {% endif %}
 
-            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-brand-600 rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 transition">
-                <i class="fas fa-print mr-2"></i> Print / Save PDF
+            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                <i class="fas fa-print mr-2"></i> Print
             </button>
+
+            <a href="{% url 'invoice_pdf' invoice.pk %}" class="inline-flex items-center px-4 py-2 border border-brand-600 rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 transition">
+                <i class="fas fa-file-pdf mr-2"></i> Download PDF
+            </a>
         </div>
     </div>
 </div>

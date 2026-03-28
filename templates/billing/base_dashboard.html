@@ -135,7 +135,7 @@
                                 <i class="fas fa-home mr-3 text-brand-300"></i>
                                 Dashboard
                             </a>
-                            
+
                             <a href="{% url 'quotation_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
                                 <i class="fas fa-file-alt mr-3 text-brand-300 group-hover:text-white"></i>
                                 Quotations
@@ -151,10 +151,32 @@
                                 Customers
                             </a>
 
+                            <a href="{% url 'product_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
+                                <i class="fas fa-box mr-3 text-brand-300 group-hover:text-white"></i>
+                                Products
+                            </a>
+
                              <a href="{% url 'receipt_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
                                 <i class="fas fa-receipt mr-3 text-brand-300 group-hover:text-white"></i>
                                 Receipts
                             </a>
+
+                            <a href="{% url 'message_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white relative">
+                                <i class="fas fa-comments mr-3 text-brand-300 group-hover:text-white"></i>
+                                Messages
+                                {% if unread_count > 0 %}
+                                <span class="absolute right-2 top-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
+                                    {{ unread_count }}
+                                </span>
+                                {% endif %}
+                            </a>
+
+                            <div class="pt-4 mt-4 border-t border-brand-800">
+                                <a href="{% url 'company_settings' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
+                                    <i class="fas fa-cog mr-3 text-brand-300 group-hover:text-white"></i>
+                                    Settings
+                                </a>
+                            </div>
                         </nav>
                     </div>
                     <div class="flex-shrink-0 flex border-t border-brand-800 p-4">

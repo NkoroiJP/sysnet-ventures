@@ -3,10 +3,16 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.db import transaction
 from django.urls import reverse
-from .models import Invoice, Quotation, Receipt, Customer, InvoiceItem, QuotationItem
+from django.http import HttpResponse, JsonResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from .models import Invoice, Quotation, Receipt, Customer, InvoiceItem, QuotationItem, Product, CompanyProfile, ContactMessage
 from .forms import (
-    CustomerForm, QuotationForm, QuotationItemFormSet, 
-    InvoiceForm, InvoiceItemFormSet, ReceiptForm
+    CustomerForm, QuotationForm, QuotationItemFormSet,
+    InvoiceForm, InvoiceItemFormSet, ReceiptForm,
+    ProductForm, CompanyProfileForm
 )
 
 # --- Dashboard ---
@@ -103,7 +109,8 @@ def quotation_update(request, pk):
 @login_required
 def quotation_detail(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
-    return render(request, 'billing/quotation_detail.html', {'quotation': quotation})
+    company = CompanyProfile.objects.first()
+    return render(request, 'billing/quotation_detail.html', {'quotation': quotation, 'company': company})
 
 @login_required
 def convert_quote_to_invoice(request, pk):
@@ -171,7 +178,8 @@ def invoice_update(request, pk):
 @login_required
 def invoice_detail(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
-    return render(request, 'billing/invoice_detail.html', {'invoice': invoice})
+    company = CompanyProfile.objects.first()
+    return render(request, 'billing/invoice_detail.html', {'invoice': invoice, 'company': company})
 
 @login_required
 def add_receipt(request, invoice_pk):
@@ -204,4 +212,157 @@ def receipt_list(request):
 @login_required
 def receipt_detail(request, pk):
     receipt = get_object_or_404(Receipt, pk=pk)
-    return render(request, 'billing/receipt_detail.html', {'receipt': receipt})
+    company = CompanyProfile.objects.first()
+    return render(request, 'billing/receipt_detail.html', {'receipt': receipt, 'company': company})
+
+# --- Products ---
+@login_required
+def product_list(request):
+    products = Product.objects.all().order_by('name')
+    return render(request, 'billing/product_list.html', {'products': products})
+
+@login_required
+def product_create(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('product_list')
+    else:
+        form = ProductForm()
+    return render(request, 'billing/product_form.html', {'form': form, 'title': 'Add Product'})
+
+@login_required
+def product_update(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect('product_list')
+    else:
+        form = ProductForm(instance=product)
+    return render(request, 'billing/product_form.html', {'form': form, 'title': 'Edit Product'})
+
+def product_api(request, pk):
+    """API endpoint to get product data for AJAX calls"""
+    product = get_object_or_404(Product, pk=pk)
+    return JsonResponse({
+        'id': product.id,
+        'name': product.name,
+        'price': str(product.price),
+        'description': product.description or '',
+        'product_type': product.product_type
+    })
+
+# --- Messages / Contact Form ---
+@login_required
+def message_list(request):
+    """List all contact messages"""
+    unread_count = ContactMessage.objects.filter(is_read=False).count()
+    messages_qs = ContactMessage.objects.all()
+    return render(request, 'billing/message_list.html', {
+        'messages': messages_qs,
+        'unread_count': unread_count
+    })
+
+@login_required
+def message_detail(request, pk):
+    """View a single message and mark as read"""
+    message = get_object_or_404(ContactMessage, pk=pk)
+    if not message.is_read:
+        message.is_read = True
+        message.save()
+    return render(request, 'billing/message_detail.html', {'message': message})
+
+@require_POST
+@login_required
+def message_mark_read(request, pk):
+    """Mark a message as read via AJAX"""
+    message = get_object_or_404(ContactMessage, pk=pk)
+    message.is_read = True
+    message.save()
+    return JsonResponse({'success': True, 'is_read': True})
+
+@require_POST
+@login_required
+def message_mark_unread(request, pk):
+    """Mark a message as unread via AJAX"""
+    message = get_object_or_404(ContactMessage, pk=pk)
+    message.is_read = False
+    message.save()
+    return JsonResponse({'success': True, 'is_read': False})
+
+@require_POST
+@login_required
+def message_delete(request, pk):
+    """Delete a message"""
+    message = get_object_or_404(ContactMessage, pk=pk)
+    message.delete()
+    messages.success(request, 'Message deleted successfully')
+    return redirect('message_list')
+
+# --- Settings ---
+@login_required
+def company_settings(request):
+    company = CompanyProfile.objects.first()
+    if request.method == 'POST':
+        form = CompanyProfileForm(request.POST, request.FILES, instance=company)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = CompanyProfileForm(instance=company)
+    return render(request, 'billing/company_settings.html', {'form': form})
+
+# --- PDF Generation ---
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    response = HttpResponse(content_type='application/pdf')
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return None
+    return response
+
+@login_required
+def quotation_pdf(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    company = CompanyProfile.objects.first()
+    data = {'quotation': quotation, 'company': company}
+    pdf = render_to_pdf('billing/pdf_quotation.html', data)
+    if pdf:
+        response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
+        filename = f"Quotation_{quotation.id}.pdf"
+        content = f"inline; filename={filename}"
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Error generating PDF", status=500)
+
+@login_required
+def invoice_pdf(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    company = CompanyProfile.objects.first()
+    data = {'invoice': invoice, 'company': company}
+    pdf = render_to_pdf('billing/pdf_invoice.html', data)
+    if pdf:
+        response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
+        filename = f"Invoice_{invoice.id}.pdf"
+        content = f"inline; filename={filename}"
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Error generating PDF", status=500)
+
+@login_required
+def receipt_pdf(request, pk):
+    receipt = get_object_or_404(Receipt, pk=pk)
+    company = CompanyProfile.objects.first()
+    data = {'receipt': receipt, 'company': company}
+    pdf = render_to_pdf('billing/pdf_receipt.html', data)
+    if pdf:
+        response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
+        filename = f"Receipt_{receipt.id}.pdf"
+        content = f"inline; filename={filename}"
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Error generating PDF", status=500)

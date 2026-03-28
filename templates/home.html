@@ -165,7 +165,18 @@
             </p>
         </div>
         <div class="mt-12">
-            <form action="#" method="POST" class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="rounded-md {% if message.tags == 'error' %}bg-red-50 border border-red-200{% else %}bg-green-50 border border-green-200{% endif %} p-4">
+                    <p class="text-sm {% if message.tags == 'error' %}text-red-800{% else %}text-green-800{% endif %}">{{ message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form action="{% url 'contact' %}" method="POST" class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8">
+                {% csrf_token %}
                 <div>
                     <label for="first-name" class="block text-sm font-medium text-gray-700">First name</label>
                     <div class="mt-1">

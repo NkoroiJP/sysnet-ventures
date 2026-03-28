@@ -5,27 +5,44 @@
     <div class="border-b border-gray-200 pb-4 mb-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900">{{ title }}</h3>
     </div>
-    
+
+    {% if form.errors or formset.errors %}
+    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-red-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Please correct the errors below</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
-        
+
         <!-- Main Invoice Info -->
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-4 mb-8">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Customer</label>
                 {{ form.customer }}
+                {{ form.customer.errors }}
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Date</label>
                 {{ form.date }}
+                {{ form.date.errors }}
             </div>
              <div>
                 <label class="block text-sm font-medium text-gray-700">Due Date</label>
                 {{ form.due_date }}
+                {{ form.due_date.errors }}
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Status</label>
                 {{ form.status }}
+                {{ form.status.errors }}
             </div>
         </div>
 
@@ -40,20 +57,24 @@
                 <div class="w-full sm:w-1/4">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Product</label>
                     {{ form.product }}
+                    {{ form.product.errors }}
                 </div>
                 <div class="w-full sm:w-1/3">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
                     {{ form.description }}
+                    {{ form.description.errors }}
                 </div>
                 <div class="w-full sm:w-1/6">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Quantity</label>
                     {{ form.quantity }}
+                    {{ form.quantity.errors }}
                 </div>
                 <div class="w-full sm:w-1/6">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Unit Price</label>
                     {{ form.unit_price }}
+                    {{ form.unit_price.errors }}
                 </div>
-                
+
                 {% if formset.can_delete %}
                 <div class="flex items-center pb-2">
                     <label class="inline-flex items-center text-sm text-red-600">
@@ -61,6 +82,7 @@
                     </label>
                 </div>
                 {% endif %}
+                {{ form.non_field_errors }}
             </div>
             {% endfor %}
         </div>
@@ -73,4 +95,43 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productSelects = document.querySelectorAll('select[name*="product"]');
+    
+    productSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const row = this.closest('.formset-row');
+            const priceInput = row.querySelector('input[name*="unit_price"]');
+            const descriptionInput = row.querySelector('input[name*="description"]');
+            const productId = this.value;
+            
+            if (productId) {
+                fetch(`/api/product/${productId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Auto-fill price
+                        if (data.price) {
+                            priceInput.value = data.price;
+                        }
+                        // Auto-fill description with product name and description
+                        if (data.name) {
+                            if (data.description) {
+                                descriptionInput.value = data.name + ' - ' + data.description;
+                            } else {
+                                descriptionInput.value = data.name;
+                            }
+                        }
+                    })
+                    .catch(err => console.log('Could not fetch product data'));
+            } else {
+                // Clear fields when no product selected
+                if (priceInput) priceInput.value = '';
+                if (descriptionInput) descriptionInput.value = '';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

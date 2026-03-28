@@ -74,6 +74,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'billing.context_processors.company_info',
+                'billing.context_processors.unread_count',
             ],
         },
     },

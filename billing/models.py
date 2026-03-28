@@ -135,3 +135,22 @@ class CompanyProfile(models.Model):
 
     class Meta:
         verbose_name_plural = "Company Profile"
+
+
+class ContactMessage(models.Model):
+    """Contact form messages from the public website"""
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Message from {self.first_name} {self.last_name}"
+    
+    def sender_name(self):
+        return f"{self.first_name} {self.last_name}"
