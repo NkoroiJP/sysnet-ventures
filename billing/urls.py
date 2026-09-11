@@ -7,7 +7,9 @@ urlpatterns = [
     # Customers
     path('customer/', views.customer_list, name='customer_list'),
     path('customer/add/', views.customer_create, name='customer_create'),
+    path('customer/ajax/add/', views.customer_create_modal, name='customer_create_modal'),
     path('customer/<int:pk>/edit/', views.customer_update, name='customer_update'),
+    path('customer/<int:pk>/delete/', views.customer_delete, name='customer_delete'),
 
     # Quotations
     path('quotation/', views.quotation_list, name='quotation_list'),
@@ -15,6 +17,8 @@ urlpatterns = [
     path('quotation/<int:pk>/', views.quotation_detail, name='quotation_detail'),
     path('quotation/<int:pk>/edit/', views.quotation_update, name='quotation_update'),
     path('quotation/<int:pk>/convert/', views.convert_quote_to_invoice, name='convert_quote_to_invoice'),
+    path('quotation/<int:pk>/status/', views.quotation_set_status, name='quotation_set_status'),
+    path('quotation/<int:pk>/delete/', views.quotation_delete, name='quotation_delete'),
     path('quotation/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
 
     # Invoices
@@ -28,12 +32,14 @@ urlpatterns = [
     # Receipts
     path('receipt/', views.receipt_list, name='receipt_list'),
     path('receipt/<int:pk>/', views.receipt_detail, name='receipt_detail'),
+    path('receipt/<int:pk>/delete/', views.receipt_delete, name='receipt_delete'),
     path('receipt/<int:pk>/pdf/', views.receipt_pdf, name='receipt_pdf'),
 
     # Products
     path('product/', views.product_list, name='product_list'),
     path('product/add/', views.product_create, name='product_create'),
     path('product/<int:pk>/edit/', views.product_update, name='product_update'),
+    path('product/<int:pk>/delete/', views.product_delete, name='product_delete'),
 
     # Messages / Contact Form
     path('messages/', views.message_list, name='message_list'),

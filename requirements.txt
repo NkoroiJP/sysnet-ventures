@@ -3,3 +3,6 @@ gunicorn
 whitenoise
 Pillow
 xhtml2pdf
+dj-database-url
+psycopg[binary]
+python-dotenv

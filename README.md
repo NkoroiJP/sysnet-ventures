@@ -36,7 +36,7 @@ The platform streamlines business workflows from lead generation (contact form) 
 |-----------|------------|
 | **Backend** | Django 5.2, Python 3.11 |
 | **Frontend** | HTML5, Tailwind CSS, Font Awesome Icons, Vanilla JavaScript |
-| **Database** | SQLite (development) / PostgreSQL (production ready) |
+| **Database** | SQLite (development, `data/db.sqlite3`) / PostgreSQL via `DATABASE_URL` |
 | **PDF Generation** | xhtml2pdf |
 | **Image Processing** | Pillow |
 | **Infrastructure** | Docker, Docker Compose |
@@ -63,34 +63,35 @@ The platform streamlines business workflows from lead generation (contact form) 
 #### Customer Management
 - Create, edit, and view customer records
 - Store contact information and addresses
-- View customer history
+- View customer history#### Quotation System
 
-#### Quotation System
-- Create professional quotations with multiple line items
+- Professional document numbers (`QTN-2026-0001`) generated automatically
+- Create quotations with multiple line items, live totals and tax
 - Auto-fill product details (name, price, description) when selecting products
-- Convert accepted quotations to invoices with one click
-- Generate and download PDF quotations
-- Track quotation status (Draft, Sent, Accepted, Rejected)
+- Add line items dynamically without re-saving
+- One-click status workflow: Draft → Sent → Accepted/Rejected → **Convert to Invoice**
+- Conversion is guarded: quotes can only be converted once
+- Generate and download PDF quotations#### Invoicing
 
-#### Invoicing
-- Create invoices from scratch or convert from quotations
-- Auto-fill product details when selecting from product catalog
-- Track payment status (Pending, Paid, Overdue)
-- Record partial or full payments
-- Generate and download professional PDF invoices
-- View payment history per invoice
+- Create invoices from scratch or convert from quotations (tax rate and notes carry over)
+- Auto-fill product details when selecting from the product catalog
+- Track payment status (Pending, Paid, Overdue — overdue is computed automatically from the due date)
+- Record partial or full payments; invoices flip to **Paid** automatically when settled
+- Payment progress bar and balance due on the invoice page
+- Generate and download professional PDF invoices (branded, with PAID stamp)
+- View payment history per invoice; delete a payment to reopen the invoice
 
 #### Receipt Management
 - Record payments against invoices
 - Generate official payment receipts as compact single-page PDFs
 - Track payment methods and add notes
-- View receipt history
+- View receipt history#### Product & Services Catalog
 
-#### Product & Services Catalog
 - Maintain a catalog of products and services
 - Define pricing and descriptions
 - Auto-populate quotation/invoice line items
 - Categorize as Service or Product
+- Archive products instead of deleting so historical documents stay intact
 
 #### Company Settings
 - Configure company profile (name, logo, contact info, tax number)
@@ -143,14 +144,24 @@ docker compose version
    cd sysnet-ventures
    ```
 
-2. **Start the application**:
+2. **Configure the environment** (copy the template and edit):
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Start the application**:
    ```bash
    docker compose up
    ```
-   
+
    Or run in background:
    ```bash
    docker compose up -d
+   ```
+
+   For production with the bundled Postgres profile:
+   ```bash
+   docker compose --profile postgres up -d
    ```
 
 3. **Access the application**:
@@ -158,13 +169,15 @@ docker compose version
    - **Dashboard**: [http://localhost:8000/billing/](http://localhost:8000/billing/)
    - **Admin Panel**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
-### Default Credentials
+### First Login
 
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | `admin` | `admin` |
+Create a superuser (or set `DJANGO_SUPERUSER_USERNAME` / `DJANGO_SUPERUSER_PASSWORD` in `.env` to have one created automatically on first boot):
 
-> ⚠️ **Security Notice**: Change the default password immediately after first login.
+```bash
+docker compose run --rm web python manage.py createsuperuser
+```
+
+> ⚠️ **Security Notice**: Never ship default credentials to production.
 
 ---
 

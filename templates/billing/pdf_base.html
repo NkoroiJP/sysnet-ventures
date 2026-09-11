@@ -1,0 +1,170 @@
+{% comment %}
+Shared base for all PDF documents. Child templates define blocks:
+  doc_title, doc_number, doc_meta (right header column),
+  client_title / client_block, extra_totals, footer_note.
+Provides: company header, items table (items variable), totals with tax.
+{% endcomment %}
+{% load static humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 1.6cm 1.5cm 2.2cm 1.5cm;
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 48pt; width: 500pt; top: 790pt; height: 40pt;
+            }
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.45;
+            color: #1f2937;
+        }
+        /* ---------- header ---------- */
+        .header { margin-bottom: 14px; }
+        .header-table { width: 100%; border: none; }
+        .brand-cell { width: 58%; vertical-align: top; }
+        .doc-cell { width: 42%; vertical-align: top; text-align: right; }
+        .logo { max-height: 55px; max-width: 180px; margin-bottom: 6px; }
+        .brand-fallback {
+            display: inline-block; width: 34px; height: 34px; line-height: 34px;
+            text-align: center; background-color: #0c4a6e; color: #ffffff;
+            font-size: 16px; font-weight: bold;
+        }
+        .company-name { font-size: 15px; font-weight: bold; color: #0c4a6e; }
+        .company-info { font-size: 9px; color: #6b7280; line-height: 1.5; margin-top: 2px; }
+        .doc-title {
+            font-size: 26px; font-weight: bold; color: #0c4a6e;
+            letter-spacing: 3px; margin-top: 4px;
+        }
+        .doc-number { font-size: 11px; font-weight: bold; color: #374151; margin-top: 2px; }
+        .doc-meta { font-size: 9px; color: #6b7280; line-height: 1.5; margin-top: 2px; }
+        .headrule { border-bottom: 2.5px solid #0ea5e9; margin-top: 10px; }
+        .status-badge {
+            display: inline-block; padding: 2px 10px; font-size: 8px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px; color: #ffffff;
+            background-color: #64748b; margin-top: 5px;
+        }
+        .badge-green  { background-color: #059669; }
+        .badge-amber  { background-color: #d97706; }
+        .badge-red    { background-color: #dc2626; }
+        .badge-blue   { background-color: #0284c7; }
+        .badge-gray   { background-color: #6b7280; }
+        .paid-stamp {
+            color: #059669; border: 3px solid #059669; font-size: 30px;
+            font-weight: bold; letter-spacing: 5px; text-align: center;
+            padding: 6px 0; width: 200px; margin: 4px 0 8px auto;
+        }
+        /* ---------- client block ---------- */
+        .section { margin-top: 16px; }
+        .section-title {
+            font-size: 8px; font-weight: bold; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            margin-bottom: 5px; padding-bottom: 2px; border-bottom: 1px solid #e5e7eb;
+        }
+        .client-name { font-size: 13px; font-weight: bold; color: #111827; }
+        .client-info { font-size: 9.5px; color: #4b5563; line-height: 1.5; margin-top: 2px; }
+        .meta-grid { width: 100%; border: none; margin-top: 4px; }
+        .meta-grid td { vertical-align: top; }
+        .meta-key { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; }
+        .meta-val { font-size: 10px; font-weight: bold; color: #111827; }
+        /* ---------- items table ---------- */
+        table.items { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        table.items th {
+            background-color: #0c4a6e; color: #ffffff; padding: 7px 9px;
+            font-size: 8.5px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 0.8px; text-align: left;
+        }
+        table.items th.num { text-align: right; }
+        table.items td {
+            padding: 8px 9px; border-bottom: 1px solid #e5e7eb;
+            font-size: 10.5px; vertical-align: top;
+        }
+        table.items tr.alt td { background-color: #f8fafc; }
+        .item-desc { color: #111827; font-weight: bold; }
+        .item-note { color: #6b7280; font-size: 9px; margin-top: 1px; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        /* ---------- totals ---------- */
+        .totals { margin-top: 10px; margin-left: 55%; width: 45%; }
+        .totals table { width: 100%; border-collapse: collapse; }
+        .totals td { padding: 4px 8px; font-size: 10.5px; }
+        .totals .lbl { color: #6b7280; text-align: right; }
+        .totals .val { text-align: right; font-weight: bold; color: #111827; white-space: nowrap; }
+        .totals tr.grand td {
+            border-top: 2px solid #0c4a6e; padding-top: 6px;
+            font-size: 13px; font-weight: bold; color: #0c4a6e;
+        }
+        .totals .paid-val { color: #059669; }
+        .totals .due-val { color: #b91c1c; }
+        /* ---------- notes ---------- */
+        .notes-box {
+            margin-top: 16px; background-color: #f8fafc; border: 1px solid #e5e7eb;
+            padding: 9px 12px; font-size: 9.5px; color: #374151;
+        }
+        .notes-title { font-size: 8px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1px; color: #9ca3af; margin-bottom: 3px; }
+        /* ---------- footer ---------- */
+        .sig-table { width: 100%; border: none; margin-top: 26px; }
+        .sig-cell { width: 50%; vertical-align: bottom; }
+        .sig-line { border-top: 1px solid #374151; margin-top: 34px; padding-top: 3px;
+            font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; }
+        #footer_content { font-size: 8.5px; color: #9ca3af; text-align: center; line-height: 1.5; }
+        #footer_content .thanks { font-weight: bold; color: #6b7280; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                <td class="brand-cell">
+                    {% if company and company.logo %}
+                        <img src="{% if company.logo.url|slice:'7' == '/media/' %}{{ company.logo.url|slice:'1:' }}{% else %}{{ company.logo.url }}{% endif %}" class="logo" alt="{{ company.name }}">
+                    {% else %}
+                        <span class="brand-fallback">{{ company.name|default:"SV"|slice:":1" }}</span>
+                    {% endif %}
+                    <div class="company-name">{{ company.name|default:"Company Name" }}</div>
+                    <div class="company-info">
+                        {% if company.address %}{{ company.address|linebreaksbr }}<br>{% endif %}
+                        {% if company.phone %}Tel: {{ company.phone }}{% if company.email %} &middot; {{ company.email }}{% endif %}<br>{% endif %}
+                        {% if company.website %}{{ company.website }}{% if company.tax_number %} &middot; PIN: {{ company.tax_number }}{% endif %}{% endif %}
+                    </div>
+                </td>
+                <td class="doc-cell">
+                    <div class="doc-title">{% block doc_title %}DOCUMENT{% endblock %}</div>
+                    <div class="doc-number">{% block doc_number %}{% endblock %}</div>
+                    <div class="doc-meta">{% block doc_meta %}{% endblock %}</div>
+                    {% block doc_badge %}{% endblock %}
+                </td>
+            </tr>
+        </table>
+        <div class="headrule"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">{% block client_title %}Client{% endblock %}</div>
+        {% block client_block %}{% endblock %}
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <table class="sig-table">
+        <tr>
+            <td class="sig-cell"><div class="sig-line">Authorized Signature</div></td>
+            <td class="sig-cell"><div class="sig-line">Received &amp; Accepted By</div></td>
+        </tr>
+    </table>
+
+    <div id="footer_content">
+        <div class="thanks">Thank you for your business!</div>
+        {% if company and company.name %}{{ company.name }}{% if company.phone %} &middot; {{ company.phone }}{% endif %}{% if company.email %} &middot; {{ company.email }}{% endif %}{% endif %}
+        {% block footer_note %}{% endblock %}
+    </div>
+
+</body>
+</html>

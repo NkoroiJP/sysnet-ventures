@@ -1,9 +1,10 @@
 {% extends 'billing/base_dashboard.html' %}
+{% load humanize %}
 
 {% block dashboard_content %}
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        
+
         <!-- Revenue -->
         <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-green-500">
             <div class="p-5">
@@ -14,31 +15,51 @@
                     <div class="ml-5 w-0 flex-1">
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                            <dd class="text-2xl font-bold text-gray-900">KES {{ total_revenue }}</dd>
+                            <dd class="text-2xl font-bold text-gray-900">{{ company.currency }} {{ total_revenue|floatformat:2|intcomma }}</dd>
+                            <dd class="text-xs text-gray-400 mt-0.5">{{ company.currency }} {{ month_revenue|floatformat:2|intcomma }} this month</dd>
                         </dl>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Pending -->
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
+        <!-- Outstanding -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-amber-500">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+                        <i class="fas fa-hourglass-half text-amber-500 text-2xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Pending Invoices</dt>
-                            <dd class="text-2xl font-bold text-gray-900">KES {{ pending_invoices_amount }}</dd>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Outstanding</dt>
+                            <dd class="text-2xl font-bold text-gray-900">{{ company.currency }} {{ outstanding|floatformat:2|intcomma }}</dd>
+                            <dd class="text-xs text-gray-400 mt-0.5">{{ pending_invoices_count }} unpaid invoice{{ pending_invoices_count|pluralize }}</dd>
                         </dl>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Active Quotes -->
+        <!-- Overdue -->
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-red-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Overdue</dt>
+                            <dd class="text-2xl font-bold {% if overdue_count > 0 %}text-red-600{% else %}text-gray-900{% endif %}">{{ overdue_count }}</dd>
+                            <dd class="text-xs text-gray-400 mt-0.5">invoice{{ overdue_count|pluralize }} past due</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline -->
         <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
             <div class="p-5">
                 <div class="flex items-center">
@@ -47,25 +68,9 @@
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Sent Quotes</dt>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Open Quotes</dt>
                             <dd class="text-2xl font-bold text-gray-900">{{ active_quotes }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Clients -->
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-purple-500">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-users text-purple-500 text-2xl"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
-                            <dd class="text-2xl font-bold text-gray-900">{{ total_customers }}</dd>
+                            <dd class="text-xs text-gray-400 mt-0.5">{{ total_customers }} client{{ total_customers|pluralize }}</dd>
                         </dl>
                     </div>
                 </div>
@@ -76,9 +81,9 @@
 
     <!-- Actions & Recent -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <!-- Main Table -->
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 space-y-8">
             <div class="bg-white shadow rounded-lg">
                 <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Invoices</h3>
@@ -88,9 +93,9 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
@@ -98,22 +103,62 @@
                             {% for invoice in recent_invoices %}
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        {% if invoice.status == 'paid' %}bg-green-100 text-green-800
-                                        {% elif invoice.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                        {% else %}bg-red-100 text-red-800{% endif %}">
-                                        {{ invoice.get_status_display }}
-                                    </span>
+                                    <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm font-bold text-gray-900 hover:text-brand-600">{{ invoice.number }}</a>
+                                    <div class="mt-1">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if invoice.effective_status == 'paid' %}bg-green-100 text-green-800
+                                            {% elif invoice.effective_status == 'overdue' %}bg-red-100 text-red-800
+                                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                            {% if invoice.effective_status == 'overdue' %}Overdue{% else %}{{ invoice.get_status_display }}{% endif %}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.customer.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">KES {{ invoice.total_amount }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">{{ company.currency }} {{ invoice.balance_due|floatformat:2|intcomma }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{% url 'invoice_detail' invoice.pk %}" class="text-brand-600 hover:text-brand-900">Manage</a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No recent activity.</td>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No invoices yet. <a href="{% url 'invoice_create' %}" class="text-brand-600 font-medium">Create the first one</a>.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Payments</h3>
+                    <a href="{% url 'receipt_list' %}" class="text-sm text-brand-600 hover:text-brand-900">View all</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for receipt in recent_receipts %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="{% url 'receipt_detail' receipt.pk %}" class="font-bold text-gray-900 hover:text-brand-600">{{ receipt.number }}</a>
+                                    <span class="text-gray-400 text-xs ml-1">{{ receipt.date }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ receipt.invoice.customer.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ receipt.payment_method|default:"—" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold text-right">{{ company.currency }} {{ receipt.amount|floatformat:2|intcomma }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No payments recorded yet.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -123,38 +168,77 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div class="space-y-4">
-                <a href="{% url 'quotation_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <span class="flex items-center">
-                        <i class="fas fa-plus-circle text-brand-500 mr-3"></i> Create New Quote
-                    </span>
-                    <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+        <div class="space-y-8">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-4">
+                    <a href="{% url 'quotation_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span class="flex items-center">
+                            <i class="fas fa-plus-circle text-brand-500 mr-3"></i> Create New Quote
+                        </span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
 
-                <a href="{% url 'invoice_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <span class="flex items-center">
-                        <i class="fas fa-file-invoice text-green-500 mr-3"></i> Create Invoice
-                    </span>
-                    <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
+                    <a href="{% url 'invoice_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span class="flex items-center">
+                            <i class="fas fa-file-invoice text-green-500 mr-3"></i> Create Invoice
+                        </span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
 
-                <a href="{% url 'customer_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <span class="flex items-center">
-                        <i class="fas fa-user-plus text-purple-500 mr-3"></i> Add Customer
-                    </span>
-                    <i class="fas fa-chevron-right text-gray-400"></i>
-                </a>
-            </div>
+                    <a href="{% url 'customer_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span class="flex items-center">
+                            <i class="fas fa-user-plus text-purple-500 mr-3"></i> Add Customer
+                        </span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
 
-            <div class="mt-8">
-                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System Status</h4>
-                <div class="flex items-center text-sm text-green-600">
-                    <i class="fas fa-check-circle mr-2"></i> Operational
+                    <a href="{% url 'product_create' %}" class="w-full flex items-center justify-between px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <span class="flex items-center">
+                            <i class="fas fa-box text-amber-500 mr-3"></i> Add Product / Service
+                        </span>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
                 </div>
-                <p class="text-xs text-gray-400 mt-1">Last backup: Today, 04:00 AM</p>
             </div>
+
+            {% if expiring_quotes %}
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-4 border-b border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Quotes Expiring Soon</h3>
+                </div>
+                <ul class="divide-y divide-gray-100">
+                    {% for quote in expiring_quotes %}
+                    <li class="px-4 py-3 flex justify-between items-center hover:bg-gray-50">
+                        <div>
+                            <a href="{% url 'quotation_detail' quote.pk %}" class="text-sm font-bold text-gray-900 hover:text-brand-600">{{ quote.number }}</a>
+                            <p class="text-xs text-gray-500">{{ quote.customer.name }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-gray-900">{{ company.currency }} {{ quote.total_amount|floatformat:2|intcomma }}</p>
+                            <p class="text-xs {% if quote.valid_until < today %}text-red-500{% else %}text-gray-400{% endif %}">valid to {{ quote.valid_until }}</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if top_customers %}
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-4 border-b border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Top Clients by Revenue</h3>
+                </div>
+                <ul class="divide-y divide-gray-100">
+                    {% for customer in top_customers %}
+                    <li class="px-4 py-3 flex justify-between items-center">
+                        <span class="text-sm text-gray-900">{{ customer.name }}</span>
+                        <span class="text-sm font-bold text-green-600">{{ company.currency }} {{ customer.revenue|floatformat:2|intcomma }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
 
     </div>

@@ -56,6 +56,20 @@
                 {{ form.tax_number }}
                 {{ form.tax_number.errors }}
             </div>
+
+            <div class="sm:col-span-3">
+                <label for="{{ form.currency.id_for_label }}" class="block text-sm font-medium text-gray-700">Currency</label>
+                {{ form.currency }}
+                {{ form.currency.errors }}
+                <p class="text-xs text-gray-400 mt-1">Shown on all documents (e.g. KES, USD, EUR)</p>
+            </div>
+
+            <div class="sm:col-span-3">
+                <label for="{{ form.default_tax_rate.id_for_label }}" class="block text-sm font-medium text-gray-700">Default Tax Rate (%)</label>
+                {{ form.default_tax_rate }}
+                {{ form.default_tax_rate.errors }}
+                <p class="text-xs text-gray-400 mt-1">Pre-filled on new quotes and invoices (0 to disable)</p>
+            </div>
         </div>
 
         <div class="flex justify-end pt-4">

@@ -1,10 +1,11 @@
 {% extends 'billing/base_dashboard.html' %}
+{% load humanize %}
 
 {% block dashboard_content %}
 <div class="max-w-xl mx-auto bg-white shadow rounded-lg">
     <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900">Record Payment</h3>
-        <p class="mt-1 text-sm text-gray-500">For Invoice #{{ invoice.id }} - {{ invoice.customer.name }}</p>
+        <p class="mt-1 text-sm text-gray-500">For Invoice {{ invoice.number }} - {{ invoice.customer.name }}</p>
     </div>
     <form method="post" class="p-6 space-y-6">
         {% csrf_token %}
@@ -16,14 +17,20 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Amount Received (KES)</label>
+                <label class="block text-sm font-medium text-gray-700">Amount Received ({{ company.currency }})</label>
                 {{ form.amount }}
-                <p class="text-xs text-gray-500 mt-1">Outstanding Balance: KES {{ invoice.balance_due }}</p>
+                <p class="text-xs text-gray-500 mt-1">Outstanding Balance: {{ company.currency }} {{ invoice.balance_due|floatformat:2|intcomma }}</p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Payment Method (e.g., Cash, Transfer, Check)</label>
+                <label class="block text-sm font-medium text-gray-700">Payment Method</label>
                 {{ form.payment_method }}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Reference</label>
+                {{ form.reference }}
+                <p class="text-xs text-gray-500 mt-1">Transaction code, cheque number, etc. (optional)</p>
             </div>
 
             <div>
