@@ -1,0 +1,65 @@
+# Render Blueprint — Sysnet Technologies platform
+# Deploy: Render Dashboard → New → Blueprint → select this repo.
+#
+# You must still set in the dashboard after the first deploy:
+#   - ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS (your onrender.com hostname or custom domain)
+#   - DJANGO_SUPERUSER_USERNAME / DJANGO_SUPERUSER_PASSWORD (first admin, created on boot)
+#   - SMTP vars (EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL)
+#     for real email delivery. Without them, email silently logs and retries.
+
+services:
+  - type: web
+    name: sysnet-web
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: sysnet-media
+      mountPath: /app/media
+      sizeGB: 5
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sysnet-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      # ── FILL THESE IN AFTER DEPLOY ────────────────────────────────
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      # ── Production hardening ─────────────────────────────────────
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+      # ── Email (optional; console fallback if unset) ──────────────
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+databases:
+  - name: sysnet-db
+    plan: basic-256mb
+    databaseName: sysnet
+    user: sysnet

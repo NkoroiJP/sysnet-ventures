@@ -243,6 +243,36 @@ Automate the backup with cron, e.g. nightly at 02:00:
 
 Volumes (`pg_data`, `media_data`) persist across restarts and rebuilds.
 
+## Deploying to Render
+
+Render runs this repo as-is (Docker runtime). The gunicorn entrypoint already binds
+`0.0.0.0:$PORT`, which is what Render expects.
+
+**Where `ALLOWED_HOSTS` goes:** Render Dashboard → your web service → **Environment** →
+add/edit the `ALLOWED_HOSTS` variable. Set it to your Render hostname plus any custom
+domain, comma-separated:
+
+```
+ALLOWED_HOSTS=sysnet.onrender.com,www.yourdomain.co.ke
+CSRF_TRUSTED_ORIGINS=https://sysnet.onrender.com,https://www.yourdomain.co.ke
+```
+
+No code changes are needed — `sysnet_core/settings.py` reads it straight from the
+environment. Restart the service after changing env vars.
+
+**One-click option:** commit the included `render.yaml` blueprint, then in Render
+**New → Blueprint** and pick the repo. It provisions the web service, a persistent disk
+for uploaded media (`/app/media`), a Postgres instance wired into `DATABASE_URL`, and the
+production security flags (`SECURE_SSL_REDIRECT`, secure cookies). You still fill in:
+
+- `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` (your hostname)
+- `DJANGO_SUPERUSER_USERNAME` / `DJANGO_SUPERUSER_PASSWORD` (creates the first admin on boot)
+- SMTP vars if you want real email delivery
+
+Render terminates TLS, so keep `SECURE_SSL_REDIRECT=True` and leave
+`SECURE_PROXY_SSL_HEADER` as configured — Django already trusts Render's
+`X-Forwarded-Proto` header.
+
 ## Running Tests
 
 ```bash
