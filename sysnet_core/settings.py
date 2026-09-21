@@ -42,10 +42,10 @@ def env_list(key, default=''):
 # ------------------------------------------------------------------ SECURITY
 SECRET_KEY = env('SECRET_KEY', 'django-insecure-dev-only-key-change-me')
 DEBUG = env_bool('DEBUG', False)
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'sysnet-ventures.onrender.com,localhost,127.0.0.1,0.0.0.0')
 CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:8000,http://127.0.0.1:8000',
+    'http://localhost:8000,http://127.0.0.1:8000,https://sysnet-ventures.onrender.com',
 )
 
 # HTTPS / proxy headers (set behind a reverse proxy that terminates TLS)
