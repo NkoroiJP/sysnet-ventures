@@ -1,0 +1,16 @@
+{% extends 'emails/base_email.html' %}
+{% block body %}
+<h2 style="margin:0 0 12px;color:#1e293b;">Quotation {{ quotation.number }}</h2>
+<p>Dear {{ quotation.client.contact_person|default:quotation.client.name }},</p>
+<p>Thank you for your interest in {{ company.name }}. Please find your quotation details below:</p>
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;">
+  <tr style="background:#f8fafc;"><td><strong>Reference</strong></td><td>{{ quotation.number }}</td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Total</strong></td><td><strong>KES {{ quotation.total }}</strong> (VAT inclusive where applicable)</td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Valid until</strong></td><td>{{ quotation.valid_until|date:'d M Y'|default:'—' }}</td></tr>
+</table>
+<p>Sign in to the client portal to review the full quotation, download the PDF and accept or request changes.</p>
+<p style="margin:20px 0;">
+  <a href="{{ portal_link }}" style="background:#1d4ed8;color:#ffffff;padding:11px 22px;border-radius:6px;text-decoration:none;font-weight:bold;">View quotation</a>
+</p>
+<p>Questions? Call us on <strong>{{ company.phone }}</strong>.</p>
+{% endblock %}

@@ -1,0 +1,14 @@
+QUOTATION {{ quotation.number }} — {{ company.name }}
+
+Dear {{ quotation.client.contact_person|default:quotation.client.name }},
+
+Thank you for your interest in {{ company.name }}.
+
+Reference: {{ quotation.number }}
+Total: KES {{ quotation.total }}
+Valid until: {{ quotation.valid_until|date:'d M Y'|default:'—' }}
+
+Sign in to the client portal to review the full quotation, download the PDF and accept or request changes:
+{{ portal_link }}
+
+Questions? Call us on {{ company.phone }}.

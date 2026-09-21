@@ -1,0 +1,38 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Allocate payment{% endblock %}
+{% block page_title %}Allocate {{ payment.number }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:36rem">
+  <div class="card-pad">
+    <div class="alert alert-info">
+      <strong>KSh {{ payment.unallocated }}</strong> is available to allocate from this payment ({{ payment.get_method_display }} · {{ payment.client.name }}).
+    </div>
+
+    {% if open_invoices %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label>Invoice *</label>
+        <select class="input" name="invoice" required>
+          <option value="">— Select invoice —</option>
+          {% for invoice in open_invoices %}
+            <option value="{{ invoice.pk }}">{{ invoice.number }} — balance KSh {{ invoice.balance_due }} (due {{ invoice.due_date|date:'d M Y' }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Amount (KSh)</label>
+        <input class="input" type="number" step="0.01" min="0.01" name="amount" placeholder="Leave blank to allocate the maximum possible">
+        <p class="help">Defaults to the smaller of the payment remainder and the invoice balance.</p>
+      </div>
+      <div class="flex" style="gap:.6rem">
+        <button class="btn btn-primary" type="submit">Allocate</button>
+        <a href="{% url 'payment_detail' payment.pk %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+    {% else %}
+      <div class="empty-state"><p>{{ payment.client.name }} has no open invoices with a balance due.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

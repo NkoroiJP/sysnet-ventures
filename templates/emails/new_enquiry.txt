@@ -1,0 +1,12 @@
+NEW QUOTE REQUEST
+
+Name: {{ enquiry.name }}
+Email: {{ enquiry.email }}{% if enquiry.phone %}
+Phone: {{ enquiry.phone }}{% endif %}{% if enquiry.company %}
+Company: {{ enquiry.company }}{% endif %}{% if enquiry.services %}
+Services: {{ enquiry.services|join:', ' }}{% endif %}
+
+Message:
+{{ enquiry.message }}
+
+Log in to the dashboard to manage this enquiry.

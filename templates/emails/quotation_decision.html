@@ -1,0 +1,7 @@
+{% extends 'emails/base_email.html' %}
+{% block body %}
+<h2 style="margin:0 0 12px;color:#1e293b;">Quotation {{ quotation.number }} {% if accepted %}accepted{% else %}rejected{% endif %}</h2>
+<p>Client <strong>{{ quotation.client.name }}</strong> has {% if accepted %}<strong style="color:#065f46">accepted</strong>{% else %}<strong style="color:#b91c1c">rejected</strong>{% endif %} quotation {{ quotation.number }} (KES {{ quotation.total }}).</p>
+{% if quotation.decision_note %}<p><strong>Client note:</strong> {{ quotation.decision_note }}</p>{% endif %}
+<p>{% if accepted %}Log in to the dashboard to convert it into an invoice.{% else %}Consider a follow-up or a revised quotation.{% endif %}</p>
+{% endblock %}

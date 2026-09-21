@@ -1,0 +1,12 @@
+PAYMENT RECEIVED — {{ company.name }}
+
+Dear {{ payment.client.contact_person|default:payment.client.name }},
+
+We confirm receipt of your payment:
+
+Amount: KES {{ payment.amount }}
+Method: {{ payment.get_method_display }}{% if payment.transaction_ref %}
+Reference: {{ payment.transaction_ref }}{% endif %}{% if receipt %}
+Receipt: {{ receipt.number }}{% endif %}
+
+Sign in to the portal to download your receipt and view your statement.

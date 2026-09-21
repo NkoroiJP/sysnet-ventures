@@ -1,0 +1,41 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users &amp; permissions{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <p class="small muted" style="margin:0">Roles: <strong>Super Admin</strong> (full access) · <strong>Finance</strong> (documents, payments, reports) · <strong>Sales</strong> (clients, catalog, quotations) · <strong>Client</strong> (portal, own data only).</p>
+  <a href="{% url 'user_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add user</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>User</th><th>Role</th><th>Client link</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+      <tbody>
+        {% for user_obj in users %}
+          <tr>
+            <td>
+              <strong>{{ user_obj.get_full_name|default:user_obj.username }}</strong>
+              <div class="small muted">{{ user_obj.username }} · {{ user_obj.email|default:'no email' }}</div>
+            </td>
+            <td><span class="badge {% if user_obj.role == 'super_admin' %}badge-purple{% elif user_obj.role == 'finance' %}badge-green{% elif user_obj.role == 'client' %}badge-blue{% else %}badge-gray{% endif %}">{{ user_obj.get_role_display }}</span></td>
+            <td class="small">{{ user_obj.client.name|default:'—' }}</td>
+            <td>
+              <span class="badge {% if user_obj.is_active %}badge-green{% else %}badge-red{% endif %}">{% if user_obj.is_active %}Active{% else %}Disabled{% endif %}</span>
+            </td>
+            <td class="small">{{ user_obj.last_login|date:'d M Y H:i'|default:'Never' }}</td>
+            <td class="text-right">
+              <a href="{% url 'user_update' user_obj.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+              {% if user_obj.pk != user.pk %}
+                <form method="post" action="{% url 'user_toggle_active' user_obj.pk %}" data-confirm="{% if user_obj.is_active %}Deactivate this account?{% else %}Activate this account?{% endif %}" style="display:inline;margin:0">{% csrf_token %}
+                  <button class="btn btn-ghost btn-sm" type="submit" style="{% if user_obj.is_active %}color:#b91c1c{% endif %}">{% if user_obj.is_active %}Disable{% else %}Enable{% endif %}</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

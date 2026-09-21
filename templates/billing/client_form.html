@@ -1,0 +1,87 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:46rem">
+  <div class="card-pad">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Client type *</label>
+          <select class="input" name="client_type">
+            {% for value, label in form.fields.client_type.choices %}
+              <option value="{{ value }}" {% if form.client_type.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select class="input" name="status">
+            {% for value, label in form.fields.status.choices %}
+              <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>{{ form.fields.name.label|default:'Name' }} *</label>
+        <input class="input {% if form.name.errors %}error{% endif %}" name="name" required value="{{ form.name.value|default:'' }}" placeholder="Company name, or full name for individuals">
+        {% if form.name.errors %}<p class="error-text">{{ form.name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Contact person</label>
+          <input class="input" name="contact_person" value="{{ form.contact_person.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input class="input" name="phone" value="{{ form.phone.value|default:'' }}" placeholder="+254 7XX XXX XXX">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input class="input {% if form.email.errors %}error{% endif %}" type="email" name="email" value="{{ form.email.value|default:'' }}">
+        {% if form.email.errors %}<p class="error-text">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Billing address</label>
+          <textarea class="input" name="billing_address" rows="2">{{ form.billing_address.value|default:'' }}</textarea>
+        </div>
+        <div class="field">
+          <label>Delivery address</label>
+          <textarea class="input" name="delivery_address" rows="2">{{ form.delivery_address.value|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>KRA PIN</label>
+          <input class="input" name="kra_pin" value="{{ form.kra_pin.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>VAT details</label>
+          <input class="input" name="vat_details" value="{{ form.vat_details.value|default:'' }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Notes</label>
+        <textarea class="input" name="notes" rows="2">{{ form.notes.value|default:'' }}</textarea>
+      </div>
+
+      <div class="flex" style="gap:.6rem">
+        <button type="submit" class="btn btn-primary">Save client</button>
+        <a href="{% url 'client_list' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

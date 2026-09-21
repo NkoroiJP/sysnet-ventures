@@ -1,0 +1,78 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Submit payment{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <h1 style="font-size:1.3rem;margin:0">Submit a payment reference</h1>
+</div>
+
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div class="card card-pad">
+    <p class="small muted">Already paid by M-Pesa or bank transfer? Submit the details below and our
+    finance team will verify it and issue your receipt. <strong>This does not mark your invoice as paid
+    until verified.</strong></p>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Amount (KSh) *</label>
+          <input class="input {% if form.amount.errors %}error{% endif %}" type="number" step="0.01" min="0.01" name="amount" required value="{{ form.amount.value|default:'' }}">
+          {% if form.amount.errors %}<p class="error-text">{{ form.amount.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label>Date paid *</label>
+          <input class="input" type="date" name="paid_on" value="{% now 'Y-m-d' %}" required>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Method *</label>
+          <select class="input" name="method">
+            <option value="mpesa">M-Pesa</option>
+            <option value="bank">Bank transfer</option>
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="cheque">Cheque</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Transaction reference *</label>
+          <input class="input {% if form.transaction_ref.errors %}error{% endif %}" name="transaction_ref" placeholder="e.g. M-Pesa confirmation code" required value="{{ form.transaction_ref.value|default:'' }}">
+          {% if form.transaction_ref.errors %}<p class="error-text">{{ form.transaction_ref.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Proof of payment (optional)</label>
+        <input class="input" type="file" name="evidence" accept=".png,.jpg,.jpeg,.webp,.pdf">
+        <p class="help">PNG, JPG, WEBP or PDF — max 5 MB.</p>
+        {% if form.evidence.errors %}<p class="error-text">{{ form.evidence.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="field">
+        <label>Note (optional)</label>
+        <textarea class="input" name="note" rows="2">{{ form.note.value|default:'' }}</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%">Submit for verification</button>
+    </form>
+  </div>
+
+  <div class="card card-pad">
+    <h3 style="font-size:1rem">Invoices with a balance</h3>
+    {% for invoice in client.invoices.all %}
+      {% if invoice.balance_due > 0 and invoice.status != 'DRAFT' %}
+        <a href="{% url 'portal_invoice' invoice.pk %}" class="flex-between" style="padding:.5rem 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+          <span class="mono small"><strong>{{ invoice.number }}</strong></span>
+          <strong class="small" style="color:var(--brand-700)">KSh {{ invoice.balance_due }}</strong>
+        </a>
+      {% endif %}
+    {% endfor %}
+    <p class="small muted mt-2">Reference your invoice number in the payment note where possible.</p>
+  </div>
+</div>
+{% endblock %}

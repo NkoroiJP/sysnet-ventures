@@ -1,197 +1,97 @@
 {% extends 'billing/base_dashboard.html' %}
-{% load humanize %}
+{% block title %}{{ quotation.number }}{% endblock %}
+{% block page_title %}Quotation {{ quotation.number }}{% endblock %}
+{% block content %}
 
-{% block dashboard_content %}
-<!-- Print-only professional header -->
-<div class="print-only mb-10 border-b-2 border-brand-600 pb-6">
-    <div class="flex justify-between items-start">
-        <div class="flex items-center">
-            {% if company.logo %}<img src="{{ company.logo.url }}" alt="{{ company.name }}" class="h-20 w-auto mr-6">{% endif %}
-            <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 leading-none mb-1">{{ company.name|default:"Sysnet Ventures" }}</h1>
-                <p class="text-gray-500 text-sm font-medium">{{ company.address|linebreaksbr }}</p>
-                <div class="flex mt-2 space-x-4 text-xs text-gray-400">
-                    {% if company.phone %}<span>{{ company.phone }}</span>{% endif %}
-                    {% if company.email %}<span>{{ company.email }}</span>{% endif %}
-                    {% if company.tax_number %}<span>PIN: {{ company.tax_number }}</span>{% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="text-right">
-            <h2 class="text-5xl font-black text-brand-600 uppercase tracking-tighter mb-2">QUOTATION</h2>
-            <p class="text-gray-900 font-bold text-xl block">{{ quotation.number }}</p>
-            <p class="text-gray-500 text-sm mt-1">Date: {{ quotation.date|date:"F d, Y" }}</p>
-            {% if quotation.valid_until %}<p class="text-gray-500 text-xs uppercase mt-1">Valid until: {{ quotation.valid_until|date:"F d, Y" }}</p>{% endif %}
-        </div>
-    </div>
+<div class="flex-between mb-2">
+  <div class="flex" style="gap:.5rem;flex-wrap:wrap;align-items:center">
+    <span class="badge {% if quotation.status == 'accepted' %}badge-green{% elif quotation.status == 'rejected' %}badge-red{% elif quotation.status == 'converted' %}badge-purple{% elif quotation.status == 'draft' %}badge-gray{% else %}badge-blue{% endif %}">{{ quotation.get_status_display }}</span>
+    <span class="small muted">Revision {{ quotation.revision }} · {{ quotation.issue_date|date:'d M Y' }}</span>
+    {% if quotation.valid_until %}<span class="small muted">· valid until {{ quotation.valid_until|date:'d M Y' }}</span>{% endif %}
+  </div>
+  <div class="flex" style="gap:.5rem;flex-wrap:wrap">
+    <a href="{% url 'quotation_pdf' quotation.pk %}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+    {% if quotation.status == 'draft' %}
+      <form method="post" action="{% url 'quotation_send' quotation.pk %}" data-confirm="Send this quotation to the client by email?">{% csrf_token %}
+        <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-paper-plane"></i> Send to client</button>
+      </form>
+      <form method="post" action="{% url 'quotation_delete' quotation.pk %}" data-confirm="Delete this draft quotation? This cannot be undone.">{% csrf_token %}
+        <button class="btn btn-ghost btn-sm" type="submit" style="color:#b91c1c">Delete</button>
+      </form>
+    {% endif %}
+    {% if quotation.status == 'accepted' and not quotation.is_converted %}
+      <form method="post" action="{% url 'quotation_convert' quotation.pk %}" data-confirm="Convert this quotation into an invoice?">{% csrf_token %}
+        <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-arrow-right-arrow-left"></i> Convert to invoice</button>
+      </form>
+    {% endif %}
+  </div>
 </div>
 
-<!-- Action bar -->
-<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6 no-print">
-    <div class="px-4 py-5 sm:px-6 flex flex-wrap gap-3 justify-between items-center bg-gray-50 border-b border-gray-200">
-        <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Quotation {{ quotation.number }}</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                {% if quotation.is_converted %}
-                    Converted to <a href="{% url 'invoice_detail' quotation.invoice.pk %}" class="text-brand-600 font-medium">invoice {{ quotation.invoice.number }}</a>
-                {% else %}
-                    Move it through the pipeline: Draft &rarr; Sent &rarr; Accepted &rarr; Invoice
-                {% endif %}
-            </p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-            <a href="{% url 'quotation_update' quotation.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <i class="fas fa-edit mr-2 text-gray-400"></i> Edit
-            </a>
-
-            {% if not quotation.is_converted %}
-            <!-- Status workflow -->
-            {% if quotation.status == 'draft' %}
-            <form action="{% url 'quotation_set_status' quotation.pk %}" method="post">
-                {% csrf_token %}<input type="hidden" name="status" value="sent">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                    <i class="fas fa-paper-plane mr-2"></i> Mark as Sent
-                </button>
-            </form>
-            {% elif quotation.status == 'sent' %}
-            <form action="{% url 'quotation_set_status' quotation.pk %}" method="post">
-                {% csrf_token %}<input type="hidden" name="status" value="accepted">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
-                    <i class="fas fa-check mr-2"></i> Mark Accepted
-                </button>
-            </form>
-            <form action="{% url 'quotation_set_status' quotation.pk %}" method="post">
-                {% csrf_token %}<input type="hidden" name="status" value="rejected">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-red-600 bg-white hover:bg-red-50"
-                    onclick="return confirm('Mark this quotation as rejected?');">
-                    <i class="fas fa-times mr-2"></i> Mark Rejected
-                </button>
-            </form>
-            {% endif %}
-
-            {% if quotation.status == 'sent' or quotation.status == 'accepted' %}
-            <form action="{% url 'convert_quote_to_invoice' quotation.pk %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700">
-                    <i class="fas fa-file-invoice mr-2"></i> Convert to Invoice
-                </button>
-            </form>
-            {% endif %}
-            {% endif %}
-
-            <a href="{% url 'quotation_pdf' quotation.pk %}" target="_blank" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <i class="fas fa-file-pdf mr-2"></i> Print / PDF
-            </a>
-
-            {% if not quotation.is_converted %}
-            <form action="{% url 'quotation_delete' quotation.pk %}" method="post"
-                onsubmit="return confirm('Delete quotation {{ quotation.number|escapejs }}? This cannot be undone.');">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-3 py-2 text-red-400 hover:text-red-600" title="Delete quotation"><i class="fas fa-trash"></i></button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Client + status -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
-    <div>
-        <h3 class="text-gray-400 font-bold uppercase text-xs tracking-widest mb-3 border-b border-gray-100 pb-1">Client</h3>
-        <div class="bg-gray-50 p-5 rounded-xl border border-gray-100">
-            <p class="text-xl font-black text-gray-900 mb-1">{{ quotation.customer.name }}</p>
-            <p class="text-gray-500 text-sm leading-relaxed mb-4">{{ quotation.customer.address|linebreaksbr }}</p>
-            <div class="space-y-1">
-                {% if quotation.customer.email %}<p class="text-sm text-gray-600"><i class="fas fa-envelope mr-2 text-brand-300"></i> {{ quotation.customer.email }}</p>{% endif %}
-                {% if quotation.customer.phone %}<p class="text-sm text-gray-600"><i class="fas fa-phone mr-2 text-brand-300"></i> {{ quotation.customer.phone }}</p>{% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="flex flex-col justify-end items-end text-right">
-        <div class="mb-6 no-print">
-            <span class="px-4 py-1.5 inline-flex text-xs leading-5 font-black rounded-full uppercase tracking-wider
-                {% if quotation.status == 'accepted' %}bg-green-100 text-green-800
-                {% elif quotation.status == 'rejected' %}bg-red-100 text-red-800
-                {% elif quotation.status == 'sent' %}bg-blue-100 text-blue-800
-                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                {{ quotation.get_status_display }}
-            </span>
-        </div>
-        <div class="p-6 bg-brand-900 rounded-2xl shadow-lg w-full max-w-xs">
-            <p class="text-brand-300 uppercase text-xs font-black tracking-widest mb-1">Quote Total</p>
-            <p class="text-3xl font-black text-white">{{ company.currency }} {{ quotation.total_amount|floatformat:2|intcomma }}</p>
-            {% if quotation.valid_until %}
-            <p class="text-brand-200 text-xs mt-2">Valid until {{ quotation.valid_until|date:"F d, Y" }}</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Items -->
-<div class="bg-white border border-gray-200 overflow-hidden sm:rounded-xl shadow-sm mb-10">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead>
-            <tr class="bg-brand-900">
-                <th scope="col" class="px-6 py-4 text-left text-xs font-black text-white uppercase tracking-widest">Item Description</th>
-                <th scope="col" class="px-6 py-4 text-center text-xs font-black text-white uppercase tracking-widest w-20">Qty</th>
-                <th scope="col" class="px-6 py-4 text-right text-xs font-black text-white uppercase tracking-widest">Unit Price</th>
-                <th scope="col" class="px-6 py-4 text-right text-xs font-black text-white uppercase tracking-widest">Amount</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-100">
-            {% for item in quotation.items.all %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-5 text-sm">
-                    <div class="font-bold text-gray-900">{{ item.description }}</div>
-                </td>
-                <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600 text-center font-medium">{{ item.quantity }}</td>
-                <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600 text-right font-medium">{{ company.currency }} {{ item.unit_price|floatformat:2|intcomma }}</td>
-                <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-900 font-bold text-right">{{ company.currency }} {{ item.total_price|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr class="bg-gray-50">
-                <td colspan="3" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Subtotal</td>
-                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ company.currency }} {{ quotation.subtotal|floatformat:2|intcomma }}</td>
-            </tr>
-            {% if quotation.tax_rate > 0 %}
-            <tr class="bg-gray-50">
-                <td colspan="3" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Tax ({{ quotation.tax_rate|floatformat:2 }}%)</td>
-                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ company.currency }} {{ quotation.tax_amount|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endif %}
-            <tr class="bg-gray-50">
-                <td colspan="3" class="px-6 py-6 text-right text-sm font-black text-gray-500 uppercase tracking-widest">Total Amount</td>
-                <td class="px-6 py-6 text-right text-2xl font-black text-brand-900">{{ company.currency }} {{ quotation.total_amount|floatformat:2|intcomma }}</td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
-
-<!-- Notes -->
-{% if quotation.notes %}
-<div class="bg-white border border-gray-200 sm:rounded-xl shadow-sm mb-10 p-6">
-    <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-2">Notes / Terms</h3>
-    <p class="text-sm text-gray-600">{{ quotation.notes|linebreaksbr }}</p>
-</div>
+{% if quotation.is_converted %}
+  <div class="alert alert-info">This quotation was converted to <a href="{% url 'invoice_detail' quotation.invoice.pk %}">invoice {{ quotation.invoice.number }}</a>.</div>
 {% endif %}
+{% if quotation.decision_note %}<div class="alert alert-info"><strong>Client note:</strong> {{ quotation.decision_note }}</div>{% endif %}
+{% if quotation.supersedes %}<div class="alert alert-info small">Revision of <a href="{% url 'quotation_detail' quotation.supersedes.pk %}">{{ quotation.supersedes.number }}</a> — previous versions are preserved.</div>{% endif %}
 
-<!-- Print terms -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-16 print-only">
-    <div>
-        <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Terms &amp; Conditions</h4>
-        <ul class="text-[10pt] text-gray-500 space-y-2 list-none p-0">
-            <li>&#9642; Prices are exclusive of taxes unless stated.</li>
-            <li>&#9642; Valid for 30 days from the date of issue unless stated otherwise.</li>
-            <li>&#9642; Full payment is required before delivery of services.</li>
-        </ul>
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data" style="min-width:0">
+        <thead><tr><th>Description</th><th>Qty</th><th class="num">Price</th><th class="num">VAT</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td>
+                <strong class="small">{{ line.description }}</strong>
+                <div class="small muted">
+                  {{ line.get_pricing_mode_display }}
+                  {% if line.discount_percent > 0 %}· {{ line.discount_percent }}% discount{% endif %}
+                  · {{ line.get_tax_type_snapshot_display|default:'Out of scope' }}{% if line.tax_rate_snapshot > 0 %} @ {{ line.tax_rate_snapshot }}%{% endif %}
+                </div>
+              </td>
+              <td class="num">{{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}</td>
+              <td class="num">{{ line.unit_price }}</td>
+              <td class="num">{{ line.line_vat }}</td>
+              <td class="num"><strong>{{ line.line_total }}</strong></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <div class="flex flex-col items-end justify-end">
-        <div class="w-64 border-t-2 border-gray-900 pt-3 text-center">
-            <p class="font-black text-gray-900 uppercase text-xs tracking-widest">Authorized Signature</p>
-            <p class="text-[10pt] text-gray-400 mt-1">{{ company.name|default:"Sysnet Ventures" }}</p>
-        </div>
+    <div class="card-pad" style="background:var(--bg-soft);border-top:1px solid var(--line)">
+      <div style="max-width:18rem;margin-left:auto;display:grid;gap:.35rem" class="small">
+        <div class="flex-between"><span class="muted">Net subtotal</span><span>{{ quotation.subtotal }}</span></div>
+        {% if quotation.discount_total > 0 %}<div class="flex-between"><span class="muted">Discounts</span><span>− {{ quotation.discount_total }}</span></div>{% endif %}
+        <div class="flex-between"><span class="muted">VAT</span><span>{{ quotation.vat_total }}</span></div>
+        <div class="flex-between" style="border-top:2px solid var(--brand-600);padding-top:.4rem"><strong>Total</strong><strong style="font-size:1.15rem;color:var(--brand-700)">KSh {{ quotation.total }}</strong></div>
+      </div>
     </div>
+  </div>
+
+  <div style="display:grid;gap:1.25rem">
+    <div class="card card-pad">
+      <h3 style="font-size:1rem;margin-bottom:.6rem">Client</h3>
+      <p style="margin:0"><a href="{% url 'client_detail' quotation.client.pk %}"><strong>{{ quotation.client.name }}</strong></a></p>
+      {% if quotation.client.email %}<p class="small muted" style="margin:0">{{ quotation.client.email }}</p>{% endif %}
+      {% if quotation.client.billing_address %}<p class="small muted mt-1" style="margin-bottom:0">{{ quotation.client.billing_address|linebreaksbr }}</p>{% endif %}
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem;margin-bottom:.6rem">Tracking</h3>
+      <div style="display:grid;gap:.45rem" class="small">
+        <div class="flex-between"><span class="muted">Created</span><span>{{ quotation.created_at|date:'d M Y H:i' }}</span></div>
+        {% if quotation.sent_at %}<div class="flex-between"><span class="muted">Sent</span><span>{{ quotation.sent_at|date:'d M Y H:i' }}</span></div>{% endif %}
+        {% if quotation.viewed_at %}<div class="flex-between"><span class="muted">Viewed by client</span><span>{{ quotation.viewed_at|date:'d M Y H:i' }}</span></div>{% endif %}
+        {% if quotation.decided_at %}<div class="flex-between"><span class="muted">Decision</span><span>{{ quotation.decided_at|date:'d M Y H:i' }}</span></div>{% endif %}
+      </div>
+    </div>
+
+    {% if quotation.notes or quotation.terms %}
+    <div class="card card-pad">
+      {% if quotation.notes %}<h3 style="font-size:1rem">Notes</h3><p class="small muted">{{ quotation.notes|linebreaksbr }}</p>{% endif %}
+      {% if quotation.terms %}<h3 class="mt-2" style="font-size:1rem">Terms</h3><p class="small muted" style="margin-bottom:0">{{ quotation.terms|linebreaksbr }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

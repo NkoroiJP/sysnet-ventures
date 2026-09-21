@@ -1,0 +1,7 @@
+QUOTATION {{ quotation.number }} {% if accepted %}ACCEPTED{% else %}REJECTED{% endif %}
+
+Client {{ quotation.client.name }} has {% if accepted %}accepted{% else %}rejected{% endif %} quotation {{ quotation.number }} (KES {{ quotation.total }}).
+{% if quotation.decision_note %}
+Client note: {{ quotation.decision_note }}
+{% endif %}
+{% if accepted %}Log in to the dashboard to convert it into an invoice.{% else %}Consider a follow-up or a revised quotation.{% endif %}

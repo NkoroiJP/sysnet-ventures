@@ -1,71 +1,62 @@
 {% extends 'billing/base_dashboard.html' %}
-{% load humanize %}
-
-{% block dashboard_content %}
-<div class="bg-white shadow rounded-lg">
-    <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex flex-wrap gap-3 justify-between items-center">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Products &amp; Services</h3>
-        <div class="flex flex-wrap gap-2 items-center">
-            <form method="get" class="flex gap-2">
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Search catalog..."
-                    class="rounded-md border-gray-300 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500">
-                <button type="submit" class="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"><i class="fas fa-search"></i></button>
-            </form>
-            <a href="{% url 'product_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-600 hover:bg-brand-700">
-                <i class="fas fa-plus mr-2"></i> Add Product
-            </a>
-        </div>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for product in products %}
-                <tr class="hover:bg-gray-50 {% if not product.is_active %}opacity-50{% endif %}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 py-1 text-xs rounded-full {% if product.product_type == 'service' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
-                            {{ product.get_product_type_display }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ company.currency }} {{ product.price|floatformat:2|intcomma }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500 max-w-md truncate">{{ product.description|default:"—" }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        {% if product.is_active %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
-                        {% else %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600">Archived</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                        <a href="{% url 'product_update' product.pk %}" class="text-brand-600 hover:text-brand-900">Edit</a>
-                        {% if product.is_active %}
-                        <form action="{% url 'product_delete' product.pk %}" method="post" class="inline"
-                            onsubmit="return confirm('Archive {{ product.name|escapejs }}? It will no longer appear in new quotes or invoices.');">
-                            {% csrf_token %}
-                            <button type="submit" class="text-red-400 hover:text-red-600">Archive</button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">
-                        No products found. <a href="{% url 'product_create' %}" class="text-brand-600 font-medium">Add your first product or service</a>.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+{% block title %}Catalog{% endblock %}
+{% block page_title %}Products &amp; services{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <form method="get" class="flex" style="gap:.5rem;flex:1;max-width:26rem">
+    <input class="input" name="q" placeholder="Search catalog…" value="{{ search_query }}">
+    <button class="btn btn-outline btn-sm" type="submit">Search</button>
+    <label class="checkbox-row small" style="margin-left:.5rem">
+      <input type="checkbox" name="archived" value="1" {% if show_archived %}checked{% endif %} onchange="this.form.submit()"> Show archived
+    </label>
+  </form>
+  <a href="{% url 'product_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add item</a>
 </div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Item</th><th>Type</th><th>Category</th><th>Tax</th><th class="num">Price</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for product in products %}
+          <tr>
+            <td>
+              <a href="{% url 'product_update' product.pk %}" style="font-weight:600">{{ product.name }}</a>
+              {% if product.sku %}<div class="small muted mono">{{ product.sku }}</div>{% endif %}
+            </td>
+            <td><span class="badge {% if product.product_type == 'service' %}badge-blue{% else %}badge-purple{% endif %}">{{ product.get_product_type_display }}</span></td>
+            <td class="small">{{ product.category|default:'—' }}</td>
+            <td class="small">{{ product.tax_category|default:'Out of scope' }}</td>
+            <td class="num">KSh {{ product.selling_price }}{% if product.unit %} <span class="muted small">/ {{ product.unit }}</span>{% endif %}</td>
+            <td>
+              <span class="badge {% if product.is_active %}badge-green{% else %}badge-gray{% endif %}">{% if product.is_active %}Active{% else %}Archived{% endif %}</span>
+              {% if product.public_show %}<span class="badge badge-blue" title="Visible on public website">Public</span>{% endif %}
+            </td>
+            <td class="text-right">
+              <form method="post" action="{% url 'product_archive' product.pk %}" data-confirm="{% if product.is_active %}Archive this item? Historical documents keep their data.{% else %}Reactivate this item?{% endif %}" style="margin:0">{% csrf_token %}
+                <button class="btn btn-ghost btn-sm" type="submit">{% if product.is_active %}Archive{% else %}Restore{% endif %}</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7"><div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <p>No catalog items yet.</p>
+            <a href="{% url 'product_create' %}" class="btn btn-primary btn-sm">Add item</a>
+          </div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+  <div class="flex-between mt-2 small muted">
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex" style="gap:.4rem">
+      {% if page_obj.has_previous %}<a class="btn btn-outline btn-sm" href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+      {% if page_obj.has_next %}<a class="btn btn-outline btn-sm" href="?q={{ search_query }}&page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+    </div>
+  </div>
+{% endif %}
 {% endblock %}

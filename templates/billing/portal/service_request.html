@@ -1,0 +1,20 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Support request{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <h1 style="font-size:1.3rem;margin:0">Request support</h1>
+</div>
+
+<div class="card card-pad" style="max-width:34rem">
+  <p class="small muted">Describe the issue or service you need — our team will get back to you shortly.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label>Message *</label>
+      <textarea class="input" name="message" rows="6" required placeholder="Describe the problem or request, including any relevant invoice numbers…"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%">Submit request</button>
+    <p class="small muted text-center mt-2" style="margin-bottom:0">Urgent? Call {{ company.phone }}.</p>
+  </form>
+</div>
+{% endblock %}

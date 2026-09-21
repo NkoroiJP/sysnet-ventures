@@ -1,0 +1,10 @@
+{% extends 'emails/base_email.html' %}
+{% block body %}
+<h2 style="margin:0 0 12px;color:#1e293b;">Website contact: {{ message.get_category_display }}</h2>
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;">
+  <tr style="background:#f8fafc;"><td><strong>From</strong></td><td>{{ message.name }}</td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Email</strong></td><td>{{ message.email }}</td></tr>
+  {% if message.phone %}<tr style="background:#f8fafc;"><td><strong>Phone</strong></td><td>{{ message.phone }}</td></tr>{% endif %}
+</table>
+<p style="background:#f8fafc;padding:12px;border-radius:6px;">{{ message.message|linebreaksbr }}</p>
+{% endblock %}

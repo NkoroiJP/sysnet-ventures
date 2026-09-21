@@ -1,0 +1,67 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Tax categories{% endblock %}
+{% block page_title %}Tax categories{% endblock %}
+{% block content %}
+<div class="alert alert-info small">
+  Tax categories are effective-dated. Changing a rate never alters issued documents — each line snapshots
+  its rate at creation. <strong>Validate rates against current KRA requirements before use.</strong>
+</div>
+
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data" style="min-width:0">
+        <thead><tr><th>Name</th><th>Type</th><th class="num">Rate</th><th>Effective</th><th>Flags</th><th></th></tr></thead>
+        <tbody>
+          {% for cat in categories %}
+            <tr>
+              <td><strong>{{ cat.name }}</strong></td>
+              <td><span class="badge {% if cat.rate_type == 'standard' %}badge-blue{% elif cat.rate_type == 'exempt' %}badge-purple{% elif cat.rate_type == 'zero' %}badge-green{% else %}badge-gray{% endif %}">{{ cat.get_rate_type_display }}</span></td>
+              <td class="num">{{ cat.rate_percent }}%</td>
+              <td class="small">{{ cat.effective_from|date:'d M Y' }}{% if cat.effective_to %} → {{ cat.effective_to|date:'d M Y' }}{% endif %}</td>
+              <td class="small">
+                {% if cat.is_default %}<span class="badge badge-green">Default</span>{% endif %}
+                {% if not cat.is_active %}<span class="badge badge-gray">Inactive</span>{% endif %}
+              </td>
+              <td class="text-right"><a href="{% url 'tax_category_update' cat.pk %}" class="btn btn-ghost btn-sm">Edit</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6"><div class="empty-state"><p>No tax categories. Run <code>seed_defaults</code>.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <h3 style="font-size:1rem">Add category</h3>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="field">
+        <label>Name *</label>
+        <input class="input" name="name" required value="{{ form.name.value|default:'' }}">
+      </div>
+      <div class="field">
+        <label>Type *</label>
+        <select class="input" name="rate_type">
+          <option value="standard">Standard rated</option>
+          <option value="zero">Zero rated</option>
+          <option value="exempt">Exempt</option>
+          <option value="out_of_scope">Out of scope</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Rate %</label>
+        <input class="input" type="number" step="0.01" min="0" max="100" name="rate_percent" value="{{ form.rate_percent.value|default:'16.00' }}">
+      </div>
+      <div class="field">
+        <label>Effective from *</label>
+        <input class="input" type="date" name="effective_from" value="{% now 'Y-m-d' %}" required>
+      </div>
+      <label class="checkbox-row mb-1"><input type="checkbox" name="is_active" checked> Active</label>
+      <label class="checkbox-row mb-2"><input type="checkbox" name="is_default"> Default for new lines</label>
+      <button class="btn btn-primary" type="submit" style="width:100%">Add category</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

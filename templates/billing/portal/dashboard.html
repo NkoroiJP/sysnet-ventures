@@ -1,0 +1,88 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <div>
+    <h1 style="font-size:1.4rem;margin-bottom:.15rem">Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+    <p class="small muted" style="margin:0">{{ client.name }}</p>
+  </div>
+  <a href="{% url 'portal_submit_payment' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-money-bill-wave"></i> Submit payment reference</a>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-label">Outstanding balance</div><div class="stat-value">KSh {{ outstanding }}</div></div>
+  <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value {% if overdue_amount > 0 %}" style="color:#b91c1c{% endif %}">KSh {{ overdue_amount }}</div></div>
+  <div class="stat-card"><div class="stat-label">Open invoices</div><div class="stat-value">{{ invoices|length }}</div></div>
+  <div class="stat-card"><div class="stat-label">Quotations to review</div><div class="stat-value">{{ quotations|length }}</div></div>
+</div>
+
+{% if overdue_invoices %}
+  <div class="alert alert-warning"><strong>Action needed:</strong> you have {{ overdue_invoices|length }} overdue invoice{{ overdue_invoices|pluralize }} totalling KSh {{ overdue_amount }}.</div>
+{% endif %}
+
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div style="display:grid;gap:1.25rem">
+    {% if quotations %}
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Quotations awaiting your decision</h3></div>
+      {% for quotation in quotations %}
+        <a href="{% url 'portal_quotation' quotation.pk %}" class="flex-between" style="padding:.75rem 1.25rem;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+          <div>
+            <strong class="mono small">{{ quotation.number }}</strong>
+            <div class="small muted">{{ quotation.issue_date|date:'d M Y' }}{% if quotation.valid_until %} · valid until {{ quotation.valid_until|date:'d M Y' }}{% endif %}</div>
+          </div>
+          <div class="text-right">
+            <strong class="small">KSh {{ quotation.total }}</strong>
+            <div><span class="badge {% if quotation.status == 'sent' or quotation.status == 'viewed' %}badge-amber{% elif quotation.status == 'accepted' %}badge-green{% else %}badge-gray{% endif %}">{{ quotation.get_status_display }}</span></div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Invoices</h3></div>
+      {% for invoice in invoices %}
+        <a href="{% url 'portal_invoice' invoice.pk %}" class="flex-between" style="padding:.75rem 1.25rem;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+          <div>
+            <strong class="mono small">{{ invoice.number }}</strong>
+            <div class="small muted">Due {{ invoice.due_date|date:'d M Y'|default:'—' }}</div>
+          </div>
+          <div class="text-right">
+            <strong class="small">KSh {{ invoice.total }}</strong>
+            <div class="small" style="color:{% if invoice.balance_due > 0 %}var(--brand-700){% else %}#065f46{% endif %}">Balance: KSh {{ invoice.balance_due }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty-state"><p>No invoices yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="display:grid;gap:1.25rem">
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Recent payments</h3></div>
+      {% for payment in payments %}
+        <div class="flex-between" style="padding:.75rem 1.25rem;border-bottom:1px solid var(--line)">
+          <div>
+            <strong class="small">KSh {{ payment.amount }}</strong>
+            <div class="small muted">{{ payment.get_method_display }} · {{ payment.paid_on|date:'d M Y' }}</div>
+          </div>
+          {% if payment.receipt %}<a href="{% url 'portal_receipt' payment.receipt.pk %}" class="btn btn-outline btn-sm">Receipt</a>{% endif %}
+        </div>
+      {% empty %}
+        <div class="empty-state"><p>No confirmed payments yet.</p></div>
+      {% endfor %}
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Quick links</h3>
+      <div style="display:grid;gap:.5rem">
+        <a href="{% url 'portal_statement' %}" class="btn btn-outline btn-sm" style="justify-content:flex-start"><i class="fa-solid fa-file-lines"></i> Account statement</a>
+        <a href="{% url 'portal_statement_pdf' %}" target="_blank" class="btn btn-outline btn-sm" style="justify-content:flex-start"><i class="fa-solid fa-file-pdf"></i> Download statement (PDF)</a>
+        <a href="{% url 'portal_service_request' %}" class="btn btn-outline btn-sm" style="justify-content:flex-start"><i class="fa-solid fa-headset"></i> Request support</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,41 +1,48 @@
 services:
+  # ---------------------------------------------------------------- web app
   web:
     build: .
     restart: unless-stopped
     command: /app/entrypoint.sh
     environment:
-      - DEBUG=${DEBUG:-False}
+      - DEBUG=${DEBUG:-True}
       - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:8000}
-      # Dev profile (default): SQLite. For production set DATABASE_URL to Postgres.
-      - DATABASE_URL=${DATABASE_URL:-}
+      - DATABASE_URL=postgres://sysnet:${POSTGRES_PASSWORD}@db:5432/sysnet
       - TIME_ZONE=${TIME_ZONE:-Africa/Nairobi}
       - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-}
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-}
       - GUNICORN_WORKERS=${GUNICORN_WORKERS:-3}
+      - STAFF_NOTIFY_EMAIL=${STAFF_NOTIFY_EMAIL:-}
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
     volumes:
-      - ./data:/app/data:Z
-      - ./media:/app/media:Z
+      - media_data:/app/media
+      - app_data:/app/data
     ports:
       - '8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
 
-  # Optional production database. `docker compose --profile postgres up -d`
+  # ---------------------------------------------------------------- database
   db:
     image: postgres:16-alpine
-    profiles: ['postgres']
     restart: unless-stopped
     environment:
       - POSTGRES_DB=sysnet
       - POSTGRES_USER=sysnet
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U sysnet']
+      test: ['CMD-SHELL', 'pg_isready -U sysnet -d sysnet']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
 
 volumes:
-  pgdata:
+  pg_data:
+  media_data:
+  app_data:

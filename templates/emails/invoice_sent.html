@@ -1,0 +1,18 @@
+{% extends 'emails/base_email.html' %}
+{% block body %}
+<h2 style="margin:0 0 12px;color:#1e293b;">Invoice {{ invoice.number }}</h2>
+<p>Dear {{ invoice.client.contact_person|default:invoice.client.name }},</p>
+<p>Please find your invoice details below:</p>
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;">
+  <tr style="background:#f8fafc;"><td><strong>Invoice number</strong></td><td>{{ invoice.number }}</td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Amount due</strong></td><td><strong>KES {{ invoice.total }}</strong></td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Due date</strong></td><td>{{ invoice.due_date|date:'d M Y'|default:'—' }}</td></tr>
+</table>
+{% if invoice.payment_instructions %}
+  <p style="background:#eff6ff;padding:12px;border-radius:6px;">{{ invoice.payment_instructions|linebreaksbr }}</p>
+{% endif %}
+<p>Sign in to the client portal to view the full invoice and download the PDF.</p>
+<p style="margin:20px 0;">
+  <a href="{{ portal_link }}" style="background:#1d4ed8;color:#ffffff;padding:11px 22px;border-radius:6px;text-decoration:none;font-weight:bold;">View invoice</a>
+</p>
+{% endblock %}

@@ -1,211 +1,189 @@
+"""Public + staff forms for the billing app."""
+from decimal import Decimal
+
 from django import forms
-from django.forms import inlineformset_factory, BaseInlineFormSet
-from django.utils import timezone
 
-from .models import Customer, Quotation, QuotationItem, Invoice, InvoiceItem, Receipt, Product, CompanyProfile
-
-INPUT_CLASS = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm'
-
-
-def style(widget):
-    existing = widget.attrs.get('class', '')
-    widget.attrs['class'] = (existing + ' ' + INPUT_CLASS).strip()
-
-
-class CustomerForm(forms.ModelForm):
-    class Meta:
-        model = Customer
-        fields = ['name', 'email', 'phone', 'address']
-        widgets = {
-            'name': forms.TextInput(attrs={'placeholder': 'Full name or company'}),
-            'email': forms.EmailInput(attrs={'placeholder': 'name@example.com'}),
-            'phone': forms.TextInput(attrs={'placeholder': '+254 7xx xxx xxx'}),
-            'address': forms.Textarea(attrs={'rows': 3}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            style(field.widget)
-
-
-class QuotationForm(forms.ModelForm):
-    class Meta:
-        model = Quotation
-        fields = ['customer', 'date', 'valid_until', 'status', 'tax_rate', 'notes']
-        widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'valid_until': forms.DateInput(attrs={'type': 'date'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Payment terms, scope notes...'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        company = CompanyProfile.load()
-        self.fields['tax_rate'].initial = company.default_tax_rate
-        self.fields['tax_rate'].help_text = 'Applied to subtotal (%)'
-        self.fields['customer'].widget.attrs.update({'class': 'js-customer-select'})
-        if not self.instance.pk:
-            self.fields['date'].initial = timezone.localdate()
-            self.fields['valid_until'].initial = timezone.localdate() + timezone.timedelta(days=30)
-        for field in self.fields.values():
-            style(field.widget)
-
-
-class QuotationItemForm(forms.ModelForm):
-    class Meta:
-        model = QuotationItem
-        fields = ['product', 'description', 'quantity', 'unit_price']
-        widgets = {
-            'product': forms.Select(attrs={'class': 'product-select'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['product'].queryset = Product.objects.filter(is_active=True)
-        self.fields['product'].required = False
-        self.fields['quantity'].widget.attrs.update({'min': 1, 'class': 'js-qty'})
-        self.fields['unit_price'].widget.attrs.update({'step': '0.01', 'min': 0, 'class': 'js-price'})
-        for field in self.fields.values():
-            style(field.widget)
-
-
-class QuotationItemFormSet(BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        if any(self.errors):
-            return
-        has_items = False
-        for form in self.forms:
-            if not hasattr(form, 'cleaned_data') or form.cleaned_data.get('DELETE'):
-                continue
-            if form.cleaned_data.get('description') and form.cleaned_data.get('unit_price') is not None:
-                has_items = True
-        if not has_items:
-            raise forms.ValidationError('Add at least one line item before saving.')
-
-
-QuotationItemFormSet = inlineformset_factory(
-    Quotation, QuotationItem, form=QuotationItemForm, formset=QuotationItemFormSet,
-    fields=['product', 'description', 'quantity', 'unit_price'],
-    extra=3, can_delete=True,
+from .models import (
+    CompanySettings, TaxCategory, Client, ClientContact, Product,
+    ServiceEnquiry, ContactMessage, PaymentSubmission, Payment,
 )
+from .storage import validate_upload
+
+INPUT_CLASS = 'input'
 
 
-class InvoiceForm(forms.ModelForm):
+def _style(form):
+    for field in form.fields.values():
+        css = field.widget.attrs.get('class', '')
+        field.widget.attrs['class'] = (css + ' ' + INPUT_CLASS).strip()
+
+
+# ---------------------------------------------------------------- public forms
+
+class ServiceEnquiryForm(forms.ModelForm):
+    services_text = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+        help_text='Comma-separated list of selected services.',
+    )
+
     class Meta:
-        model = Invoice
-        fields = ['customer', 'date', 'due_date', 'status', 'tax_rate', 'notes']
+        model = ServiceEnquiry
+        fields = ['name', 'email', 'phone', 'company', 'message']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'due_date': forms.DateInput(attrs={'type': 'date'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Payment instructions, bank details...'}),
+            'message': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe your requirements…'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        company = CompanyProfile.load()
-        self.fields['tax_rate'].initial = company.default_tax_rate
-        self.fields['tax_rate'].help_text = 'Applied to subtotal (%)'
-        if not self.instance.pk:
-            self.fields['date'].initial = timezone.localdate()
-            self.fields['due_date'].initial = timezone.localdate() + timezone.timedelta(days=30)
-        for field in self.fields.values():
-            style(field.widget)
+        _style(self)
+        self.fields['phone'].required = False
+        self.fields['company'].required = False
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        raw = self.cleaned_data.get('services_text') or ''
+        obj.services = [s.strip() for s in raw.split(',') if s.strip()]
+        if commit:
+            obj.save()
+        return obj
 
 
-class InvoiceItemForm(forms.ModelForm):
+class ContactForm(forms.ModelForm):
     class Meta:
-        model = InvoiceItem
-        fields = ['product', 'description', 'quantity', 'unit_price']
+        model = ContactMessage
+        fields = ['name', 'email', 'phone', 'category', 'message']
         widgets = {
-            'product': forms.Select(attrs={'class': 'product-select'}),
+            'message': forms.Textarea(attrs={'rows': 4}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['product'].queryset = Product.objects.filter(is_active=True)
-        self.fields['product'].required = False
-        self.fields['quantity'].widget.attrs.update({'min': 1, 'class': 'js-qty'})
-        self.fields['unit_price'].widget.attrs.update({'step': '0.01', 'min': 0, 'class': 'js-price'})
-        for field in self.fields.values():
-            style(field.widget)
+        _style(self)
+        self.fields['phone'].required = False
 
 
-class InvoiceItemFormSet(BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        if any(self.errors):
-            return
-        has_items = False
-        for form in self.forms:
-            if not hasattr(form, 'cleaned_data') or form.cleaned_data.get('DELETE'):
-                continue
-            if form.cleaned_data.get('description') and form.cleaned_data.get('unit_price') is not None:
-                has_items = True
-        if not has_items:
-            raise forms.ValidationError('Add at least one line item before saving.')
+class PaymentSubmissionForm(forms.ModelForm):
+    evidence = forms.FileField(
+        required=False,
+        help_text='Optional: upload a screenshot or PDF of your payment confirmation (max 5 MB).',
+    )
 
-
-InvoiceItemFormSet = inlineformset_factory(
-    Invoice, InvoiceItem, form=InvoiceItemForm, formset=InvoiceItemFormSet,
-    fields=['product', 'description', 'quantity', 'unit_price'],
-    extra=3, can_delete=True,
-)
-
-
-class ReceiptForm(forms.ModelForm):
     class Meta:
-        model = Receipt
-        fields = ['date', 'amount', 'payment_method', 'reference', 'note']
+        model = PaymentSubmission
+        fields = ['amount', 'method', 'transaction_ref', 'paid_on', 'note', 'evidence']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'reference': forms.TextInput(attrs={'placeholder': 'e.g. M-Pesa code, cheque no.'}),
+            'paid_on': forms.DateInput(attrs={'type': 'date'}),
             'note': forms.Textarea(attrs={'rows': 2}),
         }
 
-    def __init__(self, *args, invoice=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['date'].initial = timezone.localdate()
-        self.fields['amount'].widget.attrs.update({'step': '0.01', 'min': 0})
-        self.fields['payment_method'].widget.attrs.update({'class': 'js-payment-method'})
-        if invoice is not None:
-            self.fields['amount'].initial = invoice.balance_due
-        for field in self.fields.values():
-            style(field.widget)
+        _style(self)
 
-    def clean(self):
-        cleaned = super().clean()
-        invoice = self.cleaned_data.get('invoice') or getattr(self, '_invoice_hint', None)
-        amount = cleaned.get('amount')
-        if invoice and amount and amount <= 0:
-            self.add_error('amount', 'Amount must be greater than zero.')
-        return cleaned
+    def clean_evidence(self):
+        f = self.cleaned_data.get('evidence')
+        if f:
+            validate_upload(f)
+        return f
+
+
+# ---------------------------------------------------------------- staff forms
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = [
+            'client_type', 'name', 'contact_person', 'email', 'phone',
+            'billing_address', 'delivery_address', 'kra_pin', 'vat_details', 'notes', 'status',
+        ]
+        widgets = {
+            'billing_address': forms.Textarea(attrs={'rows': 2}),
+            'delivery_address': forms.Textarea(attrs={'rows': 2}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style(self)
+
+
+class ClientContactForm(forms.ModelForm):
+    class Meta:
+        model = ClientContact
+        fields = ['name', 'email', 'phone', 'is_primary']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style(self)
 
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'product_type', 'is_active']
+        fields = [
+            'name', 'sku', 'category', 'description', 'unit', 'selling_price',
+            'tax_category', 'is_active', 'track_stock', 'stock_quantity', 'public_show', 'image',
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['price'].widget.attrs.update({'step': '0.01', 'min': 0})
-        for field in self.fields.values():
-            style(field.widget)
+        _style(self)
+        self.fields['selling_price'].widget.attrs.update({'step': '0.01', 'min': '0'})
+
+    def clean_stock_quantity(self):
+        qty = self.cleaned_data.get('stock_quantity')
+        if self.cleaned_data.get('track_stock') and qty is not None and qty < 0:
+            raise forms.ValidationError('Stock quantity cannot be negative.')
+        return qty
 
 
-class CompanyProfileForm(forms.ModelForm):
+class CompanySettingsForm(forms.ModelForm):
     class Meta:
-        model = CompanyProfile
-        fields = ['name', 'logo', 'email', 'phone', 'address', 'website', 'tax_number', 'currency', 'default_tax_rate']
+        model = CompanySettings
+        fields = [
+            'name', 'tagline', 'logo', 'phone', 'whatsapp_number', 'email', 'website',
+            'physical_address', 'postal_address', 'kra_pin', 'vat_registered', 'vat_number',
+            'currency', 'quotation_prefix', 'invoice_prefix', 'receipt_prefix', 'credit_note_prefix',
+            'quotation_validity_days', 'invoice_payment_terms_days', 'payment_instructions',
+            'document_footer', 'terms_and_conditions', 'default_tax_category',
+            'brand_primary', 'brand_accent',
+        ]
+        widgets = {
+            'physical_address': forms.Textarea(attrs={'rows': 2}),
+            'postal_address': forms.Textarea(attrs={'rows': 2}),
+            'payment_instructions': forms.Textarea(attrs={'rows': 3}),
+            'document_footer': forms.Textarea(attrs={'rows': 2}),
+            'terms_and_conditions': forms.Textarea(attrs={'rows': 5}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['default_tax_rate'].widget.attrs.update({'step': '0.01', 'min': 0})
-        for field in self.fields.values():
-            style(field.widget)
+        _style(self)
 
 
-class CustomerSearchForm(forms.Form):
-    q = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'Search customers...', 'class': 'js-search-input'}))
+class TaxCategoryForm(forms.ModelForm):
+    class Meta:
+        model = TaxCategory
+        fields = ['name', 'rate_type', 'rate_percent', 'effective_from', 'effective_to', 'is_default', 'is_active']
+        widgets = {
+            'effective_from': forms.DateInput(attrs={'type': 'date'}),
+            'effective_to': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style(self)
+
+
+class PaymentRecordForm(forms.Form):
+    """Staff recording a payment received outside the portal."""
+    amount = forms.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal('0.01'))
+    method = forms.ChoiceField(choices=Payment.METHOD_CHOICES)
+    transaction_ref = forms.CharField(max_length=100, required=False)
+    paid_on = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 2}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style(self)

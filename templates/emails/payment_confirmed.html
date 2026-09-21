@@ -1,0 +1,13 @@
+{% extends 'emails/base_email.html' %}
+{% block body %}
+<h2 style="margin:0 0 12px;color:#065f46;">Payment received — thank you</h2>
+<p>Dear {{ payment.client.contact_person|default:payment.client.name }},</p>
+<p>We confirm receipt of your payment:</p>
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:12px 0;">
+  <tr style="background:#f8fafc;"><td><strong>Amount</strong></td><td><strong>KES {{ payment.amount }}</strong></td></tr>
+  <tr style="background:#f8fafc;"><td><strong>Method</strong></td><td>{{ payment.get_method_display }}</td></tr>
+  {% if payment.transaction_ref %}<tr style="background:#f8fafc;"><td><strong>Reference</strong></td><td>{{ payment.transaction_ref }}</td></tr>{% endif %}
+  {% if receipt %}<tr style="background:#f8fafc;"><td><strong>Receipt</strong></td><td>{{ receipt.number }}</td></tr>{% endif %}
+</table>
+<p>Sign in to the portal to download your receipt and view your up-to-date statement.</p>
+{% endblock %}

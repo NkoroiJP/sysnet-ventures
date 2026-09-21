@@ -1,75 +1,108 @@
-{% extends "billing/pdf_base.html" %}
-{% load humanize %}
-
-{% block doc_title %}INVOICE{% endblock %}
-{% block doc_number %}{{ invoice.number }}{% endblock %}
-
-{% block doc_meta %}
-Date: {{ invoice.date|date:"M d, Y" }}{% if invoice.due_date %}<br>Due: {{ invoice.due_date|date:"M d, Y" }}{% endif %}
-{% if invoice.quotation %}<br>Ref: Quotation {{ invoice.quotation.number }}{% endif %}
-{% endblock %}
-
-{% block doc_badge %}
-<span class="status-badge {% if invoice.status == 'paid' %}badge-green{% elif invoice.status == 'overdue' %}badge-red{% else %}badge-amber{% endif %}">{{ invoice.get_status_display }}</span>
-{% if invoice.status == 'paid' %}<div class="paid-stamp">PAID</div>{% endif %}
-{% endblock %}
-
-{% block client_title %}Bill To{% endblock %}
-{% block client_block %}
-<div class="client-name">{{ invoice.customer.name }}</div>
-<div class="client-info">
-    {% if invoice.customer.address %}{{ invoice.customer.address|linebreaksbr }}<br>{% endif %}
-    {% if invoice.customer.email %}{{ invoice.customer.email }}{% if invoice.customer.phone %} &middot; {{ invoice.customer.phone }}{% endif %}{% endif %}
+{% extends 'billing/pdf_base.html' %}
+{% block doc %}
+<div class="brand-header">
+  <table style="margin:0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="border:none;width:60%">
+        {% if company.logo %}<img src="{{ company.logo.url }}" style="height:42pt" /><br/>{% endif %}
+        <span class="brand-name">{{ company.name }}</span><br/>
+        <span class="brand-meta">
+          {% if company.physical_address %}{{ company.physical_address|linebreaksbr }}<br/>{% endif %}
+          Tel: {{ company.phone }}{% if company.email %} · {{ company.email }}{% endif %}{% if company.website %} · {{ company.website }}{% endif %}
+          {% if company.kra_pin %}<br/>KRA PIN: {{ company.kra_pin }}{% endif %}{% if company.vat_number %} · VAT No: {{ company.vat_number }}{% endif %}
+        </span>
+      </td>
+      <td style="border:none;text-align:right" class="num">
+        <div class="doc-title">INVOICE</div>
+        <div class="doc-number">{{ invoice.number }}</div>
+        <div class="small muted">Issued: {{ invoice.issue_date|date:'d M Y' }}</div>
+        {% if invoice.due_date %}<div class="small muted">Due: {{ invoice.due_date|date:'d M Y' }}</div>{% endif %}
+      </td>
+    </tr>
+  </table>
 </div>
-{% endblock %}
 
-{% block content %}
-<table class="items">
-    <thead>
-        <tr>
-            <th style="width: 50%;">Description</th>
-            <th class="num" style="width: 10%;">Qty</th>
-            <th class="num" style="width: 20%;">Unit Price</th>
-            <th class="num" style="width: 20%;">Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in invoice.items.all %}
-        <tr class="{% cycle 'alt' '' %}">
-            <td>
-                <div class="item-desc">{{ item.description }}</div>
-                {% if item.product and item.product.name != item.description %}<div class="item-note">{{ item.product.product_type|capfirst }}</div>{% endif %}
-            </td>
-            <td class="text-center">{{ item.quantity }}</td>
-            <td class="text-right">{{ company.currency|default:"KES" }} {{ item.unit_price|floatformat:2|intcomma }}</td>
-            <td class="text-right">{{ company.currency|default:"KES" }} {{ item.total_price|floatformat:2|intcomma }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<table style="margin-top:0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="border:none;width:55%;background-color:#f8fafc;padding:8pt">
+      <strong>BILL TO</strong><br/>
+      {{ invoice.client.name }}<br/>
+      {% if invoice.client.contact_person %}Attn: {{ invoice.client.contact_person }}<br/>{% endif %}
+      {% if invoice.client.billing_address %}{{ invoice.client.billing_address|linebreaksbr }}<br/>{% endif %}
+      {% if invoice.client.email %}{{ invoice.client.email }}<br/>{% endif %}
+      {% if invoice.client.kra_pin %}PIN: {{ invoice.client.kra_pin }}{% endif %}
+    </td>
+    <td style="border:none;width:45%;text-align:right" class="num">
+      <span class="badge">{{ invoice.get_status_display|upper }}</span>
+      {% if invoice.quotation %}<div class="small muted" style="margin-top:4pt">Quotation: {{ invoice.quotation.number }}</div>{% endif %}
+    </td>
+  </tr>
 </table>
 
-<div class="totals">
-    <table>
-        <tr><td class="lbl">Subtotal:</td><td class="val">{{ company.currency|default:"KES" }} {{ invoice.subtotal|floatformat:2|intcomma }}</td></tr>
-        {% if invoice.tax_rate > 0 %}
-        <tr><td class="lbl">Tax ({{ invoice.tax_rate|floatformat:2 }}%):</td><td class="val">{{ company.currency|default:"KES" }} {{ invoice.tax_amount|floatformat:2|intcomma }}</td></tr>
-        {% endif %}
-        <tr class="grand"><td class="lbl">Total:</td><td class="val">{{ company.currency|default:"KES" }} {{ invoice.total_amount|floatformat:2|intcomma }}</td></tr>
-        {% if invoice.amount_paid > 0 %}
-        <tr><td class="lbl">Amount Paid:</td><td class="val paid-val">{{ company.currency|default:"KES" }} {{ invoice.amount_paid|floatformat:2|intcomma }}</td></tr>
-        <tr class="grand"><td class="lbl">Balance Due:</td><td class="val due-val">{{ company.currency|default:"KES" }} {{ invoice.balance_due|floatformat:2|intcomma }}</td></tr>
-        {% endif %}
-    </table>
-</div>
+<h3>Items</h3>
+<table cellpadding="0" cellspacing="0">
+  <thead>
+    <tr>
+      <th style="width:40%">Description</th>
+      <th style="width:10%">Unit</th>
+      <th style="width:10%" class="num">Qty</th>
+      <th style="width:15%" class="num">Unit price</th>
+      <th style="width:8%" class="num">Disc.</th>
+      <th style="width:8%" class="num">VAT</th>
+      <th style="width:9%" class="num">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr>
+      <td>
+        <strong>{{ line.description }}</strong>
+        {% if line.tax_rate_snapshot > 0 %}<div class="small muted">VAT {{ line.tax_rate_snapshot }}%</div>
+        {% elif line.tax_type_snapshot == 'zero' %}<div class="small muted">Zero rated</div>
+        {% elif line.tax_type_snapshot == 'exempt' %}<div class="small muted">Exempt</div>
+        {% else %}<div class="small muted">Out of scope</div>{% endif %}
+      </td>
+      <td>{{ line.unit|default:'—' }}</td>
+      <td class="num">{{ line.quantity }}</td>
+      <td class="num">{{ line.unit_price }}</td>
+      <td class="num">{% if line.discount_percent > 0 %}{{ line.discount_percent }}%{% else %}—{% endif %}</td>
+      <td class="num">{{ line.line_vat }}</td>
+      <td class="num"><strong>{{ line.line_total }}</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-{% if invoice.notes %}
-<div class="notes-box">
-    <div class="notes-title">Notes / Payment Instructions</div>
-    {{ invoice.notes|linebreaksbr }}
+<table class="totals" style="width:40%;margin-left:60%" cellpadding="0" cellspacing="0">
+  <tr><td class="muted">Net subtotal</td><td class="num">KSh {{ invoice.subtotal }}</td></tr>
+  {% if invoice.discount_total > 0 %}<tr><td class="muted">Discounts</td><td class="num">KSh {{ invoice.discount_total }}</td></tr>{% endif %}
+  <tr><td class="muted">VAT</td><td class="num">KSh {{ invoice.vat_total }}</td></tr>
+  <tr><td class="grand">TOTAL</td><td class="num grand">KSh {{ invoice.total }}</td></tr>
+  {% if invoice.amount_paid > 0 %}
+    <tr><td class="muted">Amount paid</td><td class="num" style="color:#065f46">KSh {{ invoice.amount_paid }}</td></tr>
+    <tr><td><strong>BALANCE DUE</strong></td><td class="num" style="font-weight:bold;font-size:11pt">KSh {{ invoice.balance_due }}</td></tr>
+  {% endif %}
+</table>
+
+<!-- VAT summary grouped by rate/type -->
+<h3>VAT summary</h3>
+<table cellpadding="0" cellspacing="0">
+  <thead><tr><th>Category</th><th class="num">Rate</th><th class="num">Net</th><th class="num">VAT</th></tr></thead>
+  <tbody>
+    {% for group in vat_groups %}
+      <tr><td>{{ group.label }}</td><td class="num">{% if group.rate > 0 %}{{ group.rate }}%{% else %}—{% endif %}</td><td class="num">{{ group.net }}</td><td class="num">{{ group.vat }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if invoice.payment_instructions %}
+<div class="info-box">
+  <strong>Payment instructions</strong><br/>
+  <span class="small">{{ invoice.payment_instructions|linebreaksbr }}</span>
 </div>
 {% endif %}
-{% endblock %}
 
-{% block footer_note %}
-{% if invoice.balance_due > 0 and invoice.due_date %}<br>Kindly settle the outstanding balance of {{ company.currency|default:"KES" }} {{ invoice.balance_due|floatformat:2|intcomma }} due {{ invoice.due_date|date:"M d, Y" }}.{% endif %}
+{% if invoice.notes %}<h3>Notes</h3><p class="small">{{ invoice.notes|linebreaksbr }}</p>{% endif %}
+{% if invoice.terms %}<h3>Terms &amp; conditions</h3><p class="small">{{ invoice.terms|linebreaksbr }}</p>
+{% elif company.terms_and_conditions %}<h3>Terms &amp; conditions</h3><p class="small">{{ company.terms_and_conditions|linebreaksbr }}</p>{% endif %}
 {% endblock %}

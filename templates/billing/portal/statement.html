@@ -1,0 +1,31 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Statement{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <h1 style="font-size:1.3rem;margin:0">Account statement</h1>
+  <a href="{% url 'portal_statement_pdf' %}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="small">{{ entry.date|date:'d M Y' }}</td>
+            <td><span class="badge {% if entry.type == 'Invoice' %}badge-blue{% elif entry.type == 'Receipt' %}badge-green{% else %}badge-purple{% endif %}">{{ entry.type }}</span></td>
+            <td class="mono small">{{ entry.ref }}</td>
+            <td class="small">{{ entry.description }}</td>
+            <td class="num">{% if entry.debit > 0 %}{{ entry.debit }}{% endif %}</td>
+            <td class="num">{% if entry.credit > 0 %}{{ entry.credit }}{% endif %}</td>
+            <td class="num"><strong>{{ entry.balance }}</strong></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7"><div class="empty-state"><p>No transactions on your account yet.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

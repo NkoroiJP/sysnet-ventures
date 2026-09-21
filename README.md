@@ -1,450 +1,344 @@
-# Sysnet Ventures Platform
+# Sysnet Technologies — Business Platform
 
-A comprehensive business management system designed for Sysnet Ventures, featuring a public-facing website with contact functionality and an integrated billing/dashboard platform for managing customers, quotations, invoices, receipts, products, and internal communications.
+A complete, production-oriented corporate website **and** business management platform for
+**Sysnet Technologies**, a Kenyan ICT solutions company. It combines a polished public website
+with a full quotation → invoice → payment → receipt workflow, VAT-compliant Kenyan tax handling,
+a self-service client portal, role-based staff access, and Docker deployment.
 
 ---
 
 ## Table of Contents
-
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Getting Started](#getting-started)
-- [User Guide](#user-guide)
-- [Development](#development)
-- [Project Structure](#project-structure)
-- [Security](#security)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## Overview
-
-Sysnet Ventures Platform is a full-stack business management solution that combines:
-
-1. **Public Website** - A professional landing page showcasing services with an integrated contact form
-2. **Management Dashboard** - A secure, authenticated area for managing all business operations
-3. **Messaging System** - Internal chat-style interface for handling customer inquiries from the contact form
-
-The platform streamlines business workflows from lead generation (contact form) to quotation, invoicing, and payment tracking.
+1. [Overview & Architecture](#overview--architecture)
+2. [Feature Summary](#feature-summary)
+3. [Technology Stack](#technology-stack)
+4. [Quick Start (Docker)](#quick-start-docker)
+5. [Creating the First Administrator](#creating-the-first-administrator)
+6. [Environment Variables](#environment-variables)
+7. [Database Migrations](#database-migrations)
+8. [Backup & Restore](#backup--restore)
+9. [Production Deployment (Ubuntu VPS)](#production-deployment-ubuntu-vps)
+10. [Running Tests](#running-tests)
+11. [Roles & Permissions](#roles--permissions)
+12. [VAT & Tax Configuration](#vat--tax-configuration)
+13. [Project Structure](#project-structure)
+14. [Troubleshooting](#troubleshooting)
+15. [Remaining Limitations](#remaining-limitations)
 
 ---
 
-## Tech Stack
+## Overview & Architecture
 
-| Component | Technology |
-|-----------|------------|
-| **Backend** | Django 5.2, Python 3.11 |
-| **Frontend** | HTML5, Tailwind CSS, Font Awesome Icons, Vanilla JavaScript |
-| **Database** | SQLite (development, `data/db.sqlite3`) / PostgreSQL via `DATABASE_URL` |
-| **PDF Generation** | xhtml2pdf |
-| **Image Processing** | Pillow |
-| **Infrastructure** | Docker, Docker Compose |
-| **Web Server** | Django Development Server / Gunicorn (production) |
-| **Static Files** | WhiteNoise |
+A single maintainable Django monolith with three logical apps:
 
----
-
-## Features
-
-### Public Website
-
-- **Landing Page** - Modern, responsive design showcasing company services
-- **Services Section** - Displays offerings: Software Development, Network Installation, CCTV & Security, Repair & Maintenance, Sales & Accessories, Technical Consultancy
-- **Contact Form** - Allows visitors to send inquiries directly to the dashboard messaging system
-
-### Dashboard & Billing
-
-#### Dashboard Overview
-- Real-time financial metrics (total revenue, pending invoices)
-- Quick stats (total customers, active quotes)
-- Recent activity feed
-
-#### Customer Management
-- Create, edit, and view customer records
-- Store contact information and addresses
-- View customer history#### Quotation System
-
-- Professional document numbers (`QTN-2026-0001`) generated automatically
-- Create quotations with multiple line items, live totals and tax
-- Auto-fill product details (name, price, description) when selecting products
-- Add line items dynamically without re-saving
-- One-click status workflow: Draft → Sent → Accepted/Rejected → **Convert to Invoice**
-- Conversion is guarded: quotes can only be converted once
-- Generate and download PDF quotations#### Invoicing
-
-- Create invoices from scratch or convert from quotations (tax rate and notes carry over)
-- Auto-fill product details when selecting from the product catalog
-- Track payment status (Pending, Paid, Overdue — overdue is computed automatically from the due date)
-- Record partial or full payments; invoices flip to **Paid** automatically when settled
-- Payment progress bar and balance due on the invoice page
-- Generate and download professional PDF invoices (branded, with PAID stamp)
-- View payment history per invoice; delete a payment to reopen the invoice
-
-#### Receipt Management
-- Record payments against invoices
-- Generate official payment receipts as compact single-page PDFs
-- Track payment methods and add notes
-- View receipt history#### Product & Services Catalog
-
-- Maintain a catalog of products and services
-- Define pricing and descriptions
-- Auto-populate quotation/invoice line items
-- Categorize as Service or Product
-- Archive products instead of deleting so historical documents stay intact
-
-#### Company Settings
-- Configure company profile (name, logo, contact info, tax number)
-- Company details appear on all PDF documents
-- Upload and manage company logo
-
-#### Messaging System
-- **Inbox** - View all contact form submissions in a chat-style interface
-- **Unread Counter** - Red badge on sidebar shows number of unread messages
-- **Read/Unread Status** - Toggle message status; unread messages highlighted
-- **Quick Actions** - Mark as read/unread, delete, reply via email
-- **Message Detail** - Full conversation view with sender information
-
-### PDF Generation
-
-All PDF documents are professionally formatted and include:
-
-- Company branding and contact information
-- Customer/client details
-- Itemized listings with quantities and prices
-- Totals, taxes, and balances
-- Status indicators (Paid, Pending, etc.)
-- Signature and stamp areas
-
-**Available PDFs:**
-- Quotations
-- Invoices
-- Payment Receipts (compact single-page design)
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Docker** (version 20.10 or higher)
-- **Docker Compose** (version 2.0 or higher)
-
-Verify installation:
-```bash
-docker --version
-docker compose version
+```
+                        ┌─────────────────────────────┐
+  Public website  ────►  │  website   (home, services, │
+  (no login needed)      │  products, portfolio, forms)│
+                        └──────────┬──────────────────┘
+                                   │
+  Client portal    ─────►  ┌───────▼──────────┐     ┌──────────────┐
+  (client role)            │  billing         │────►│ PostgreSQL   │
+                           │  quotations      │     └──────────────┘
+  Staff dashboard  ─────►  │  invoices        │     ┌──────────────┐
+  (sales/finance/admin)    │  payments        │────►│ WhiteNoise   │
+                           │  receipts        │     │ static files │
+                           │  credit notes    │     └──────────────┘
+                           │  CRM & reports   │     ┌──────────────┐
+                           └───────┬──────────┘────►│ Media (logo, │
+                                   │                │ evidence)    │
+                           ┌───────▼──────────┐     └──────────────┘
+                           │  accounts        │
+                           │  users/roles,    │
+                           │  audit, throttle │
+                           └──────────────────┘
 ```
 
-### Quick Start
+- **Authentication**: Django sessions; login throttled per username and IP (fail-closed).
+- **Authorization**: enforced **server-side** by decorators on every view — hiding buttons in
+  the UI is never the only guard.
+- **Financial integrity**: all totals are computed server-side with `Decimal` (never floats);
+  monetary rounding is `ROUND_HALF_UP` to 2 dp, documented in `billing/money.py`.
+- **Immutability**: issued documents are never edited or deleted — they are voided or credited,
+  and every sensitive action is written to an append-only audit log.
+- **PDF documents** (quotation, invoice, receipt, statement, credit note data) render
+  server-side via xhtml2pdf with shared branding.
+- **Emails**: branded HTML + plain-text fallback, retry with delivery tracking
+  (`NotificationLog`); a broken mail server never corrupts a financial transaction.
 
-1. **Clone the repository** (if not already done):
-   ```bash
-   git clone <repository-url>
-   cd sysnet-ventures
-   ```
+## Feature Summary
 
-2. **Configure the environment** (copy the template and edit):
-   ```bash
-   cp .env.example .env
-   ```
+**Public website**
+- Homepage with hero, featured services, why-us, industries, approved project showcase
+- About (mission/vision/values/approach)
+- 8 editable service pages (networking, fiber/GPON, computer sales & maintenance, software
+  development, cloud & hosting, cybersecurity, managed IT, IT automation), each with an
+  enquiry form
+- Product catalogue (admin-curated; optional prices; enquiry workflow — no invented stock)
+- Portfolio (only projects marked public)
+- Contact form with category routing, WhatsApp link, phone
+- Request-a-Quote form (staff notified; **no** auto-invoice)
+- SEO: editable meta titles/descriptions, Open Graph, sitemap.xml, robots.txt, clean URLs
+- Rate limiting on all public forms
 
-3. **Start the application**:
-   ```bash
-   docker compose up
-   ```
+**Business workflow**
+- Client CRM (individual/business, KRA PIN, VAT details, addresses, status, notes)
+- Catalog with SKU, unit, tax category defaults, stock tracking, archiving
+- Quotations: dynamic line builder, VAT-exclusive **and** VAT-inclusive pricing, per-line
+  discounts, mixed tax categories, notes/terms/validity, draft → send → client accepts/
+  rejects/requests changes → revise (revisions preserved) → convert to invoice
+- Invoices: unique numbers, issue/void/credit notes, payment instructions, automatic
+  outstanding-balance calculation, overdue tracking
+- Payments: staff-recorded and client-submitted (with proof-of-evidence upload, securely
+  stored and permission-checked); M-Pesa / bank / cash / card / cheque / other; duplicate
+  transaction references rejected; verification workflow; **client submissions never mark
+  an invoice paid by themselves**
+- Receipts: auto-issued only on confirmation; unique numbers; branded PDF; idempotent
+- Allocations: one payment across multiple invoices; cannot exceed payment remainder or
+  invoice balance; correctable (deallocate)
+- Account statements per client (screen + PDF) and CSV exports
 
-   Or run in background:
-   ```bash
-   docker compose up -d
-   ```
+**Client portal** — dashboard with balances, document downloads, accept/reject quotations,
+payment reference submission with status tracking, statements, profile editing, support
+requests. Mobile-first and strictly scoped to the logged-in client's own data.
 
-   For production with the bundled Postgres profile:
-   ```bash
-   docker compose --profile postgres up -d
-   ```
+**Staff dashboard** — real figures only (revenue received, invoiced, outstanding, overdue,
+pending quotations, accepted quotations, payments awaiting verification, unallocated
+payments, monthly revenue chart, invoice aging buckets, recent activity).
 
-3. **Access the application**:
-   - **Public Website**: [http://localhost:8000](http://localhost:8000)
-   - **Dashboard**: [http://localhost:8000/billing/](http://localhost:8000/billing/)
-   - **Admin Panel**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+**Administration** — company settings (identity, logo upload, KRA PIN/VAT, numbering
+prefixes, default terms, payment instructions, brand colors), configurable effective-dated
+tax categories, user management, audit log.
 
-### First Login
+## Technology Stack
 
-Create a superuser (or set `DJANGO_SUPERUSER_USERNAME` / `DJANGO_SUPERUSER_PASSWORD` in `.env` to have one created automatically on first boot):
+| Component      | Choice                                   |
+|----------------|------------------------------------------|
+| Backend        | Python 3.11, Django 5.2                  |
+| Database       | PostgreSQL 16 (SQLite only as a dev fallback without Docker) |
+| Frontend       | Django templates, Tailwind-free custom CSS design system, vanilla JS |
+| PDF            | xhtml2pdf (server-side)                  |
+| Static files   | WhiteNoise (compressed, manifest)        |
+| Auth           | Django sessions + role model + throttle backend |
+| Web serving    | Gunicorn behind Nginx (production)       |
+| Deployment     | Docker + Docker Compose                  |
+| Tests          | Django test suite (`manage.py test`)     |
+
+## Quick Start (Docker)
+
+Prerequisites: **Docker 20.10+** and **Docker Compose 2.0+** — nothing else is installed on
+the host.
+
+```bash
+# 1. Clone and configure
+git clone <repository-url> && cd sysnet-ventures
+cp .env.example .env
+#    edit .env — set SECRET_KEY, POSTGRES_PASSWORD (and optionally the
+#    DJANGO_SUPERUSER_* variables to get an admin created on first boot)
+
+# 2. Start everything (Postgres + app)
+docker compose up -d
+
+# 3. Watch first boot (migrations run automatically; safe defaults seeded)
+docker compose logs -f web
+
+# 4. Open the site
+#    Public website:  http://localhost:8000/
+#    Staff dashboard: http://localhost:8000/billing/
+#    Client portal:   http://localhost:8000/accounts/login/
+#    Django admin:    http://localhost:8000/admin/
+```
+
+Stop with `docker compose down` (data persists in named volumes). `docker compose down -v`
+**destroys** the database.
+
+## Creating the First Administrator
+
+**Option A — automatic (recommended):** set in `.env` before first boot:
+
+```
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_PASSWORD=your-strong-password
+DJANGO_SUPERUSER_EMAIL=you@example.com
+```
+
+**Option B — interactive:**
 
 ```bash
 docker compose run --rm web python manage.py createsuperuser
 ```
 
-> ⚠️ **Security Notice**: Never ship default credentials to production.
+The superuser has the **Super Admin** role and sees the Administration menu
+(company settings, tax categories, users, audit log). Create Finance / Sales / Client users
+from **Dashboard → Users**. For Client users you must also create the matching Client record
+and link it on the user form.
 
----
+## Environment Variables
 
-## User Guide
+All configuration is environment-driven — no secrets in the image. See
+[`.env.example`](.env.example) for the full annotated list. The essentials:
 
-### Creating a Quotation
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Django secret — **required**, generate a random string |
+| `DEBUG` | `True` only for local dev |
+| `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` | your domain(s) |
+| `POSTGRES_PASSWORD` | password for the bundled Postgres |
+| `DATABASE_URL` | override to use an external/managed Postgres |
+| `DJANGO_SUPERUSER_USERNAME/PASSWORD/EMAIL` | optional first-boot admin |
+| `EMAIL_BACKEND`, `EMAIL_HOST*`, `DEFAULT_FROM_EMAIL`, `STAFF_NOTIFY_EMAIL` | outbound email |
+| `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_HSTS_SECONDS` | production HTTPS hardening (set by `docker-compose.prod.yml`) |
+| `THROTTLE_LOGIN_LIMIT` / `THROTTLE_FORM_LIMIT` | rate-limit tuning |
 
-1. Navigate to **Quotations** → **Add Quotation**
-2. Select customer (or create new)
-3. Set date and status
-4. Add line items:
-   - Select a product/service from dropdown (price and description auto-fill)
-   - Or enter custom description, quantity, and unit price
-5. Click **Save Quotation**
-6. View, edit, or download as PDF
+## Database Migrations
 
-### Converting Quote to Invoice
-
-1. Open an accepted quotation
-2. Click **Convert to Invoice**
-3. System creates invoice with same line items
-4. Review and send to customer
-
-### Recording a Payment
-
-1. Open an invoice
-2. Click **Record Payment**
-3. Enter amount, payment method, and optional note
-4. Click **Save**
-5. Invoice status updates automatically if fully paid
-6. Generate receipt PDF if needed
-
-### Managing Messages
-
-1. **View Messages**: Click **Messages** in sidebar
-   - Red badge shows unread count
-   - Green dot indicates unread messages in list
-
-2. **Read a Message**: Click **View** on any message
-   - Automatically marks as read
-   - Shows full message content and sender details
-
-3. **Reply**: Click **Reply** button
-   - Opens default email client with recipient pre-filled
-
-4. **Manage Status**: Use **Mark Read** / **Mark Unread** buttons
-
-5. **Delete**: Click trash icon (requires confirmation)
-
-### Adding Products/Services
-
-1. Navigate to **Products** → **Add Product**
-2. Enter name, description, price, and type (Service/Product)
-3. Click **Save Product**
-4. Product now available for auto-fill in quotations and invoices
-
-### Company Settings
-
-1. Navigate to **Settings**
-2. Update company information:
-   - Company name
-   - Logo (appears on PDFs)
-   - Email, phone, address
-   - Website URL
-   - Tax/PIN number
-3. Click **Save Settings**
-
----
-
-## Development
-
-### Running Migrations
-
-When models change, update the database:
+Migrations run automatically on container start. To run them manually:
 
 ```bash
-docker compose run --rm web python manage.py makemigrations
 docker compose run --rm web python manage.py migrate
+# after model changes (development):
+docker compose run --rm web python manage.py makemigrations
 ```
 
-### Creating a Superuser
+## Backup & Restore
 
 ```bash
-docker compose run --rm web python manage.py createsuperuser
+# Backup (Postgres dump + media tarball into ./backups/)
+./scripts/backup.sh
+
+# Restore
+./scripts/restore.sh backups/db-<stamp>.dump backups/media-<stamp>.tar.gz
 ```
 
-### Accessing Django Shell
-
-```bash
-docker compose run --rm web python manage.py shell
+Automate the backup with cron, e.g. nightly at 02:00:
+```
+0 2 * * * cd /opt/sysnet && ./scripts/backup.sh /var/backups/sysnet
 ```
 
-### Running Tests
+## Production Deployment (Ubuntu VPS)
 
-```bash
-docker compose run --rm web python manage.py test
-```
-
-### Installing New Dependencies
-
-1. Add package to `requirements.txt`
-2. Rebuild container:
+1. **Install Docker**: `curl -fsSL https://get.docker.com | sh`
+2. **Copy the project** to e.g. `/opt/sysnet` and create `.env` with production values:
+   `DEBUG=False`, real `SECRET_KEY`, your domain in `ALLOWED_HOSTS` and
+   `CSRF_TRUSTED_ORIGINS` (`https://yourdomain.com`), strong `POSTGRES_PASSWORD`, SMTP
+   credentials.
+3. **Start in production mode:**
    ```bash
-   docker compose build
-   docker compose up -d
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
    ```
+   This enables the Nginx reverse proxy, security headers, secure cookies, and keeps
+   Postgres private on the internal network (no published ports).
+4. **DNS**: point your domain's A record at the VPS IP. The site is then reachable on
+   `http://yourdomain.com`.
+5. **HTTPS (Let's Encrypt)** — the included Nginx config is TLS-ready. Simplest robust
+   setup: run [Caddy](https://caddyserver.com) or `certbot --nginx` on the host, or add a
+   certificate at `deploy/certs/fullchain.pem` + `privkey.pem` and uncomment the 443
+   listener in `deploy/nginx.conf`. Then set:
+   ```
+   CSRF_TRUSTED_ORIGINS=https://yourdomain.com
+   SECURE_SSL_REDIRECT=True
+   ```
+6. **Firewall**: allow only 80/443 (and SSH). Postgres and the app are internal-only.
+7. **Backups**: schedule `scripts/backup.sh` (see above).
+8. **Updates**: `git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml build && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
 
-### Viewing Logs
+Volumes (`pg_data`, `media_data`) persist across restarts and rebuilds.
+
+## Running Tests
 
 ```bash
-# Real-time logs
-docker compose logs -f
+# inside Docker (recommended)
+docker compose run --rm web python manage.py test
 
-# Last 50 lines
-docker compose logs --tail=50
-
-# Specific service
-docker compose logs web
+# or locally in a venv
+python -m manage test
 ```
 
-### Stopping the Application
+The suite (36 tests) covers: VAT-inclusive/exclusive/mixed/zero-rated/discount/rounding
+math, quotation→invoice→payment→receipt workflow, partial payments and balance tracking,
+duplicate-reference rejection, allocation limits, unverified-payment isolation, client
+submission safety, IDOR/cross-client access prevention, role enforcement, login
+throttling, PDF generation, email-failure resilience, and audit logging.
 
+Demo data for **development only** (refuses to run with `DEBUG=False`):
 ```bash
-# Stop temporarily
-docker compose down
-
-# Stop and remove volumes (resets database)
-docker compose down -v
+docker compose run --rm web python manage.py seed_demo
 ```
 
----
+## Roles & Permissions
+
+| Role | Access |
+|---|---|
+| **Super Admin** | Everything: settings, tax configuration, users, audit log |
+| **Finance** | Invoices, payments, receipts, credit notes, quotations, reports |
+| **Sales** | Clients, catalog, enquiries, quotations (no invoicing) |
+| **Client** | Portal only — strictly their own quotations, invoices, payments, receipts, statement |
+
+Permissions are enforced server-side (`billing/access.py` decorators). Access by a client
+user to another client's document returns **403** and is test-covered.
+
+## VAT & Tax Configuration
+
+- Tax categories are **configurable and effective-dated** (Settings → Tax categories).
+- Standard defaults seeded: Standard rated 16%, Zero rated, Exempt, Out of scope —
+  clearly distinguished on documents and reports.
+- Each document line **snapshots** its rate and category at creation; later tax changes
+  never alter issued documents.
+- Both VAT-exclusive and VAT-inclusive pricing are supported per line, with mixed
+  categories in one document and a grouped VAT summary on invoices.
+- ⚠ **Tax settings must be validated against current KRA requirements and the business's
+  actual tax status** before issuing VAT documents. The platform provides correct
+  arithmetic and configuration, not tax advice.
 
 ## Project Structure
 
 ```
-sysnet-ventures/
-├── billing/                    # Main application module
-│   ├── migrations/             # Database migrations
-│   ├── models.py               # Data models (Customer, Invoice, etc.)
-│   ├── views.py                # Request handlers
-│   ├── forms.py                # Django forms
-│   ├── urls.py                 # URL routing
-│   ├── context_processors.py   # Template context (unread count, company info)
-│   └── admin.py                # Django admin configuration
-│
-├── sysnet_core/                # Project settings module
-│   ├── settings.py             # Django settings
-│   ├── urls.py                 # Root URL configuration
-│   └── wsgi.py                 # WSGI entry point
-│
-├── templates/                  # HTML templates
-│   ├── base.html               # Base template for public pages
-│   ├── home.html               # Landing page with contact form
-│   └── billing/                # Dashboard templates
-│       ├── base_dashboard.html # Dashboard layout with sidebar
-│       ├── dashboard.html      # Dashboard overview
-│       ├── message_list.html   # Messages inbox
-│       ├── message_detail.html # Single message view
-│       ├── product_list.html   # Product catalog
-│       ├── product_form.html   # Add/edit product
-│       ├── company_settings.html # Company profile settings
-│       └── pdf_*.html          # PDF templates (invoice, quotation, receipt)
-│
-├── media/                      # User-uploaded files (logos, etc.)
-├── static/                     # Static assets (collected by WhiteNoise)
-├── docker-compose.yml          # Docker Compose configuration
-├── Dockerfile                  # Container build instructions
-├── requirements.txt            # Python dependencies
-├── manage.py                   # Django management script
-└── README.md                   # This file
+├── accounts/            # Custom user model, roles, audit log, login throttling
+├── billing/             # Domain: clients, catalog, documents, payments, VAT engine
+│   ├── models.py        #   (all models incl. website content models)
+│   ├── services.py      #   transactional business logic (the accounting rules)
+│   ├── money.py         #   documented money/rounding policy
+│   ├── views_staff.py / views_documents.py / views_portal.py
+│   ├── document_forms.py / forms.py / validators.py
+│   └── management/commands/  # seed_defaults (prod-safe), seed_demo (dev-only)
+├── website/             # Public website views/urls
+├── sysnet_core/         # Settings, root urls, sitemap, health check
+├── templates/           # website/, billing/ (dashboard+PDFs), billing/portal/, emails/
+├── static/              # css/app.css design system, js/app.js
+├── deploy/              # nginx.conf (+ TLS cert location)
+├── scripts/             # backup.sh, restore.sh
+├── docker-compose.yml   # dev: web + postgres
+├── docker-compose.prod.yml  # production overrides (+ nginx, hardening)
+└── Dockerfile           # non-root, health-checked image
 ```
-
----
-
-## Security
-
-### Best Practices Implemented
-
-- **CSRF Protection** - All POST forms include CSRF tokens
-- **Authentication Required** - All dashboard views require login
-- **Password Hashing** - Django's built-in password hashing
-- **SQL Injection Protection** - Django ORM parameterized queries
-- **XSS Protection** - Automatic template escaping
-
-### Recommendations for Production
-
-1. **Change Default Password**
-   ```bash
-   docker compose run --rm web python manage.py changepassword admin
-   ```
-
-2. **Set Environment Variables**
-   - `SECRET_KEY` - Use a strong, unique key
-   - `DEBUG=False` - Disable debug mode
-   - `ALLOWED_HOSTS` - Restrict to your domain
-
-3. **Use HTTPS** - Configure SSL/TLS termination
-
-4. **Database** - Migrate to PostgreSQL for production
-
-5. **Regular Backups**
-   ```bash
-   # Backup database
-   docker compose run --rm web cp /app/db.sqlite3 /backups/db-$(date +%Y%m%d).sqlite3
-   ```
-
----
 
 ## Troubleshooting
 
-### Container Won't Start
+| Symptom | Fix |
+|---|---|
+| **Site unreachable after a successful build** | Usually one of: (1) you started the **prod** profile and nothing listens on your port — prod publishes **80/443 via nginx** (port 8000 is not published); (2) nginx crash-looped on a bad/missing config — `docker compose logs nginx`; (3) web is unhealthy — `docker compose logs web`. Verify with `docker compose ps` and `curl -I http://localhost/healthz`. |
+| `web` exits with "Database did not become ready" | Postgres not up yet — `docker compose logs db`; the entrypoint retries 30×/2s |
+| `FATAL: password authentication failed for user "sysnet"` | The Postgres volume was initialized with a **different** `POSTGRES_PASSWORD` than the one now in `.env` (env vars set at first boot win). Either restore the old password in `.env`, or wipe the volume: `docker compose down -v && docker compose up -d` (destroys data). |
+| Static files look unstyled after update | `docker compose run --rm web python manage.py collectstatic` (runs automatically on boot) |
+| `502` from nginx | App still starting or crashed — `docker compose logs web` |
+| Uploaded logo 404s in production | Media is served by Django with permission checks (payment evidence is staff-only). Ensure `media_data` volume exists and the file was uploaded via **Settings → Company**. |
+| Emails not arriving | Dev default prints to container logs; set SMTP vars for real delivery; check **Dashboard → notification status** via `NotificationLog` admin |
+| Forgot admin password | `docker compose run --rm web python manage.py reset_admin_password <username> <newpass>` |
+| Reset everything (destroys data!) | `docker compose down -v && docker compose up -d` |
 
-```bash
-# Check logs
-docker compose logs web
+## Remaining Limitations
 
-# Rebuild
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-```
-
-### Database Errors
-
-```bash
-# Run migrations
-docker compose run --rm web python manage.py migrate
-
-# If migrations fail, reset (WARNING: deletes data)
-docker compose down -v
-docker compose up -d
-docker compose run --rm web python manage.py migrate
-docker compose run --rm web python manage.py createsuperuser
-```
-
-### Static Files Not Loading
-
-```bash
-# Collect static files
-docker compose run --rm web python manage.py collectstatic --noinput
-```
-
-### PDF Generation Issues
-
-- Ensure xhtml2pdf is installed: `pip install xhtml2pdf`
-- Check that company logo path is accessible
-- Verify CSS is inline-compatible (xhtml2pdf limitations)
-
-### Contact Form Not Saving Messages
-
-1. Check that migrations ran: `python manage.py showmigrations`
-2. Verify ContactMessage model exists in admin
-3. Check browser console for JavaScript errors
+- **M-Pesa Daraja (STK Push / callbacks)**: architecture is ready (Payment model,
+  verification workflow, idempotent references, env-based credentials pattern), but no
+  live integration is enabled. Manual M-Pesa recording + verification is fully functional.
+  Never make live Daraja calls without proper credentials and authorization.
+- **Two-factor authentication**: session security, throttling and activation controls are
+  in place; a TOTP second factor can be added on top of the accounts app.
+- **Background jobs (Celery/Redis)**: not required at current scale — emails retry inline
+  with delivery logging. Add a worker when volume justifies it.
+- **Testimonials**: the model exists but the homepage shows them only when real approved
+  content is supplied (none is invented).
+- **VAT settings** must be verified against current KRA rules by the business.
 
 ---
 
-## Support
-
-For issues, questions, or feature requests, please contact the development team.
-
----
-
-## License
-
-Proprietary - Sysnet Ventures. All rights reserved.
-
----
-
-**Last Updated**: March 2026  
-**Version**: 1.0.0
+*Proprietary — Sysnet Technologies. All rights reserved.*

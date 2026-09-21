@@ -1,0 +1,147 @@
+{% extends 'base_public.html' %}
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container" style="display:grid;gap:3rem;padding-block:4.5rem;align-items:center" class="hero-grid">
+    <div>
+      <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Trusted ICT Partner in Kenya</span>
+      <h1>Technology that moves your business <span style="color:var(--brand-600)">forward.</span></h1>
+      <p style="font-size:1.15rem;color:var(--ink-soft);max-width:36rem">
+        From enterprise networking and fiber/GPON infrastructure to software development, cloud and
+        cybersecurity — {{ company.name }} designs, builds and supports the technology your organisation runs on.
+      </p>
+      <div class="flex" style="gap:.75rem;flex-wrap:wrap;margin-top:1.5rem">
+        <a href="{% url 'request_quote' %}" class="btn btn-primary">Request a Quote</a>
+        <a href="{% url 'service_list' %}" class="btn btn-outline">Explore Services</a>
+        <a href="{% url 'contact' %}" class="btn btn-ghost">Contact Us</a>
+      </div>
+      <div class="flex small muted mt-3" style="gap:1.5rem;flex-wrap:wrap">
+        <span><i class="fa-solid fa-check" style="color:var(--brand-600)"></i> Certified engineers</span>
+        <span><i class="fa-solid fa-check" style="color:var(--brand-600)"></i> SLA-backed support</span>
+        <span><i class="fa-solid fa-check" style="color:var(--brand-600)"></i> End-to-end delivery</span>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true" style="display:none">
+      <div class="card card-pad" style="background:linear-gradient(135deg,var(--brand-700),var(--brand-500));color:#fff;border:none">
+        <i class="fa-solid fa-network-wired" style="font-size:2rem;opacity:.9"></i>
+        <h3 style="color:#fff;margin-top:.8rem">Infrastructure that just works</h3>
+        <p class="small" style="color:#dbeafe">Networking · Fiber/GPON · Cloud · Security · Software</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured services -->
+<section class="section">
+  <div class="container">
+    <div class="text-center" style="max-width:42rem;margin:0 auto 2.5rem">
+      <span class="eyebrow">What we do</span>
+      <h2>Complete ICT services under one roof</h2>
+      <p class="muted">One accountable partner for your entire technology stack — from the server room to the cloud.</p>
+    </div>
+    <div class="grid-3">
+      {% for service in services %}
+        <a href="{% url 'service_detail' service.slug %}" class="card card-pad card-hover" style="text-decoration:none;color:inherit">
+          <div style="width:2.75rem;height:2.75rem;border-radius:.7rem;background:var(--brand-50);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:.9rem">
+            <i class="fa-solid {{ service.icon|default:'fa-gear' }}"></i>
+          </div>
+          <h3 style="font-size:1.05rem">{{ service.title }}</h3>
+          <p class="small muted" style="margin:0">{{ service.summary|truncatechars:120 }}</p>
+        </a>
+      {% empty %}
+        <div class="empty-state" style="grid-column:1/-1"><p>Service catalogue coming soon.</p></div>
+      {% endfor %}
+    </div>
+    <div class="text-center mt-3">
+      <a href="{% url 'service_list' %}" class="btn btn-outline">View all services <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- Why choose us -->
+<section style="background:var(--bg-soft)" class="section">
+  <div class="container">
+    <div class="grid-2" style="align-items:center;gap:3rem">
+      <div>
+        <span class="eyebrow">Why {{ company.name }}</span>
+        <h2>A technology partner, not just a vendor</h2>
+        <p class="muted">We take responsibility for outcomes — designing solutions around your business goals and staying accountable after go-live.</p>
+        <div style="display:grid;gap:1rem;margin-top:1.5rem">
+          <div class="flex" style="gap:.9rem"><i class="fa-solid fa-circle-check" style="color:var(--brand-600);margin-top:.25rem"></i><div><strong>End-to-end delivery.</strong> <span class="muted">Survey, design, implementation, documentation and training from one team.</span></div></div>
+          <div class="flex" style="gap:.9rem"><i class="fa-solid fa-circle-check" style="color:var(--brand-600);margin-top:.25rem"></i><div><strong>SLA-backed support.</strong> <span class="muted">Managed plans with defined response times and monthly reporting.</span></div></div>
+          <div class="flex" style="gap:.9rem"><i class="fa-solid fa-circle-check" style="color:var(--brand-600);margin-top:.25rem"></i><div><strong>Enterprise-grade practices.</strong> <span class="muted">Tested, documented and secured to professional standards.</span></div></div>
+          <div class="flex" style="gap:.9rem"><i class="fa-solid fa-circle-check" style="color:var(--brand-600);margin-top:.25rem"></i><div><strong>Transparent commercials.</strong> <span class="muted">Clear quotations, VAT-compliant invoicing and structured payments.</span></div></div>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:1rem">
+        <div class="card card-pad text-center"><h3 style="font-size:1.6rem;color:var(--brand-600);margin-bottom:.1rem">8+</h3><p class="small muted" style="margin:0">Core service lines</p></div>
+        <div class="card card-pad text-center"><h3 style="font-size:1.6rem;color:var(--brand-600);margin-bottom:.1rem">360°</h3><p class="small muted" style="margin:0">Technology coverage</p></div>
+        <div class="card card-pad text-center"><h3 style="font-size:1.6rem;color:var(--brand-600);margin-bottom:.1rem">SLA</h3><p class="small muted" style="margin:0">Backed support plans</p></div>
+        <div class="card card-pad text-center"><h3 style="font-size:1.6rem;color:var(--brand-600);margin-bottom:.1rem">KE</h3><p class="small muted" style="margin:0">Locally based team</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Industries -->
+<section class="section">
+  <div class="container">
+    <div class="text-center" style="max-width:40rem;margin:0 auto 2.5rem">
+      <span class="eyebrow">Industries</span>
+      <h2>Sectors we serve</h2>
+      <p class="muted">Tailored solutions for organisations of every size.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-store" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">SMEs &amp; Startups</strong></div>
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-building" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">Corporate &amp; Enterprise</strong></div>
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-graduation-cap" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">Schools &amp; Universities</strong></div>
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-hospital" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">Hospitals &amp; Clinics</strong></div>
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-hotel" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">Hotels &amp; Hospitality</strong></div>
+      <div class="card card-pad flex" style="gap:.8rem;align-items:center"><i class="fa-solid fa-landmark" style="color:var(--brand-500)"></i><strong style="font-size:.95rem">Government &amp; NGOs</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- Projects -->
+{% if projects %}
+<section style="background:var(--bg-soft)" class="section">
+  <div class="container">
+    <div class="flex-between mb-3">
+      <div>
+        <span class="eyebrow">Our work</span>
+        <h2 style="margin:0">Featured projects</h2>
+      </div>
+      <a href="{% url 'portfolio' %}" class="btn btn-ghost btn-sm">All projects →</a>
+    </div>
+    <div class="grid-3">
+      {% for project in projects %}
+        <div class="card card-hover">
+          {% if project.image %}<img src="{{ project.image.url }}" alt="{{ project.title }}" style="height:11rem;width:100%;object-fit:cover;border-radius:.6rem .6rem 0 0">{% endif %}
+          <div class="card-pad">
+            <span class="badge badge-blue">{{ project.category|default:'Project' }}</span>
+            <h3 style="font-size:1.02rem;margin-top:.6rem">{{ project.title }}</h3>
+            <p class="small muted" style="margin:0">{{ project.description|truncatechars:110 }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="section">
+  <div class="container">
+    <div class="card card-pad" style="background:linear-gradient(135deg,var(--brand-800),var(--brand-600));border:none;text-align:center;padding:3.5rem 1.5rem">
+      <h2 style="color:#fff">Ready to upgrade your technology?</h2>
+      <p style="color:#bfdbfe;max-width:34rem;margin:0 auto 1.5rem">Tell us what you need — we will respond with a structured, transparent quotation.</p>
+      <div class="flex" style="gap:.75rem;justify-content:center;flex-wrap:wrap">
+        <a href="{% url 'request_quote' %}" class="btn btn-primary" style="background:#fff;color:var(--brand-700)">Request a Quote</a>
+        <a href="tel:{{ company.phone }}" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.4)"><i class="fa-solid fa-phone"></i> {{ company.phone }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

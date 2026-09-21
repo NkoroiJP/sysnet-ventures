@@ -1,0 +1,81 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:36rem">
+  <div class="card-pad">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Username *</label>
+          <input class="input {% if form.username.errors %}error{% endif %}" name="username" required value="{{ form.username.value|default:'' }}">
+          {% if form.username.errors %}<p class="error-text">{{ form.username.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label>Role *</label>
+          <select class="input" name="role">
+            {% for value, label in form.fields.role.choices %}
+              <option value="{{ value }}" {% if form.role.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>First name</label>
+          <input class="input" name="first_name" value="{{ form.first_name.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>Last name</label>
+          <input class="input" name="last_name" value="{{ form.last_name.value|default:'' }}">
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Email</label>
+          <input class="input" type="email" name="email" value="{{ form.email.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input class="input" name="phone" value="{{ form.phone.value|default:'' }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Linked client (Client role only)</label>
+        <select class="input" name="client">
+          <option value="">— None —</option>
+          {% for client in form.fields.client.choices.queryset %}
+            <option value="{{ client.pk }}" {% if form.client.value|stringformat:'s' == client.pk|stringformat:'s' %}selected{% endif %}>{{ client.name }}</option>
+          {% endfor %}
+        </select>
+        <p class="help">Client-role users can only see documents belonging to this client.</p>
+      </div>
+
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Password {% if form.instance.pk %}(leave blank to keep){% endif %}</label>
+          <input class="input" type="password" name="password1" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirm password</label>
+          <input class="input" type="password" name="password2" autocomplete="new-password">
+        </div>
+      </div>
+      {% if form.password1.errors %}<p class="error-text">{{ form.password1.errors.0 }}</p>{% endif %}
+
+      <label class="checkbox-row mb-2"><input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}> Account active</label>
+
+      <div class="flex" style="gap:.6rem">
+        <button class="btn btn-primary" type="submit">Save user</button>
+        <a href="{% url 'user_list' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

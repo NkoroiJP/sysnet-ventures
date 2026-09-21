@@ -1,0 +1,7 @@
+WEBSITE CONTACT: {{ message.get_category_display }}
+
+From: {{ message.name }}
+Email: {{ message.email }}{% if message.phone %}
+Phone: {{ message.phone }}{% endif %}
+
+{{ message.message }}

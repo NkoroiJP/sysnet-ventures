@@ -1,0 +1,13 @@
+INVOICE {{ invoice.number }} — {{ company.name }}
+
+Dear {{ invoice.client.contact_person|default:invoice.client.name }},
+
+Invoice number: {{ invoice.number }}
+Amount due: KES {{ invoice.total }}
+Due date: {{ invoice.due_date|date:'d M Y'|default:'—' }}
+
+{% if invoice.payment_instructions %}Payment instructions:
+{{ invoice.payment_instructions }}
+
+{% endif %}Sign in to the client portal to view the full invoice and download the PDF:
+{{ portal_link }}

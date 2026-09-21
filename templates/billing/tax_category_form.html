@@ -1,0 +1,44 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:32rem">
+  <div class="card-pad">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="field">
+        <label>Name *</label>
+        <input class="input" name="name" required value="{{ form.name.value|default:'' }}">
+      </div>
+      <div class="field">
+        <label>Type *</label>
+        <select class="input" name="rate_type">
+          {% for value, label in form.fields.rate_type.choices %}
+            <option value="{{ value }}" {% if form.rate_type.value == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Rate %</label>
+        <input class="input" type="number" step="0.01" min="0" max="100" name="rate_percent" value="{{ form.rate_percent.value|default:'0.00' }}">
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Effective from</label>
+          <input class="input" type="date" name="effective_from" value="{{ form.effective_from.value|date:'Y-m-d' }}">
+        </div>
+        <div class="field">
+          <label>Effective to</label>
+          <input class="input" type="date" name="effective_to" value="{{ form.effective_to.value|date:'Y-m-d' }}">
+        </div>
+      </div>
+      <label class="checkbox-row mb-1"><input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}> Active</label>
+      <label class="checkbox-row mb-2"><input type="checkbox" name="is_default" {% if form.is_default.value %}checked{% endif %}> Default for new lines</label>
+      <div class="flex" style="gap:.6rem">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a href="{% url 'tax_categories' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

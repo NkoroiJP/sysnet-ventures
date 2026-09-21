@@ -1,217 +1,85 @@
-<!DOCTYPE html>
+{% load static role_tags %}<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sysnet Ventures Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @media print {
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .print-only {
-                display: block !important;
-            }
-            body {
-                background-color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color: #111827 !important;
-                font-size: 11pt !important;
-            }
-            .shadow, .rounded-lg {
-                box-shadow: none !important;
-            }
-            .h-screen {
-                height: auto !important;
-                overflow: visible !important;
-            }
-            .flex {
-                display: flex !important;
-            }
-            .justify-between {
-                justify-content: space-between !important;
-            }
-            .items-start {
-                align-items: flex-start !important;
-            }
-            .items-center {
-                align-items: center !important;
-            }
-            .w-64, .md\:flex {
-                display: none !important;
-            }
-            .overflow-hidden, .overflow-y-auto {
-                overflow: visible !important;
-            }
-            main {
-                padding: 0 !important;
-            }
-            .max-w-7xl {
-                max-width: 100% !important;
-            }
-            table {
-                page-break-inside: auto;
-                border-collapse: collapse !important;
-                width: 100% !important;
-            }
-            tr {
-                page-break-inside: avoid !important;
-                page-break-after: auto;
-            }
-            thead {
-                display: table-header-group;
-            }
-            .bg-brand-900 {
-                background-color: #0c4a6e !important;
-                color: white !important;
-            }
-            .bg-brand-50 {
-                background-color: #f0f9ff !important;
-            }
-            .bg-gray-50 {
-                background-color: #f9fafb !important;
-            }
-            .text-brand-600 {
-                color: #0284c7 !important;
-            }
-            .text-brand-700 {
-                color: #0369a1 !important;
-            }
-            .border-brand-600 {
-                border-color: #0284c7 !important;
-            }
-            .border-b-2 {
-                border-bottom-width: 2pt !important;
-            }
-        }
-        .print-only {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} · {{ company.name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-100 font-sans">
-    
-    <div class="flex h-screen overflow-hidden">
-        
-        <!-- Sidebar -->
-        <div class="hidden md:flex md:flex-shrink-0 no-print">
-            <div class="flex flex-col w-64">
-                <div class="flex flex-col h-0 flex-1 bg-brand-900 shadow-xl">
-                    <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-                        <div class="flex items-center flex-shrink-0 px-4 mb-6">
-                            <span class="text-white text-2xl font-bold">Sysnet</span>
-                        </div>
-                        <nav class="mt-5 flex-1 px-2 space-y-1">
-                            <a href="{% url 'dashboard' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white bg-brand-800">
-                                <i class="fas fa-home mr-3 text-brand-300"></i>
-                                Dashboard
-                            </a>
+<body>
+<div class="dash">
+  <aside class="dash-sidebar" id="sidebar">
+    <a href="{% url 'dashboard' %}" class="brand" style="text-decoration:none">
+      {% if company.logo %}<img src="{{ company.logo.url }}" alt="" style="height:1.9rem;width:auto">{% else %}<span style="display:inline-flex;width:1.9rem;height:1.9rem;border-radius:.5rem;background:var(--brand-500);color:#fff;align-items:center;justify-content:center;font-weight:800">S</span>{% endif %}
+      {{ company.name }}
+    </a>
 
-                            <a href="{% url 'quotation_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                <i class="fas fa-file-alt mr-3 text-brand-300 group-hover:text-white"></i>
-                                Quotations
-                            </a>
-
-                            <a href="{% url 'invoice_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                <i class="fas fa-file-invoice-dollar mr-3 text-brand-300 group-hover:text-white"></i>
-                                Invoices
-                            </a>
-
-                            <a href="{% url 'customer_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                <i class="fas fa-users mr-3 text-brand-300 group-hover:text-white"></i>
-                                Customers
-                            </a>
-
-                            <a href="{% url 'product_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                <i class="fas fa-box mr-3 text-brand-300 group-hover:text-white"></i>
-                                Products
-                            </a>
-
-                             <a href="{% url 'receipt_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                <i class="fas fa-receipt mr-3 text-brand-300 group-hover:text-white"></i>
-                                Receipts
-                            </a>
-
-                            <a href="{% url 'message_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white relative">
-                                <i class="fas fa-comments mr-3 text-brand-300 group-hover:text-white"></i>
-                                Messages
-                                {% if unread_count > 0 %}
-                                <span class="absolute right-2 top-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold">
-                                    {{ unread_count }}
-                                </span>
-                                {% endif %}
-                            </a>
-
-                            <div class="pt-4 mt-4 border-t border-brand-800">
-                                <a href="{% url 'company_settings' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-brand-100 hover:bg-brand-800 hover:text-white">
-                                    <i class="fas fa-cog mr-3 text-brand-300 group-hover:text-white"></i>
-                                    Settings
-                                </a>
-                            </div>
-                        </nav>
-                    </div>
-                    <div class="flex-shrink-0 flex border-t border-brand-800 p-4">
-                        <div class="flex items-center">
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-white">
-                                    {{ user.username|title }}
-                                </p>
-                                <form action="{% url 'logout' %}" method="post" class="inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="text-xs font-medium text-brand-200 hover:text-white group-hover:text-white">
-                                        Logout
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="flex flex-col w-0 flex-1 overflow-hidden">
-            <main class="flex-1 relative overflow-y-auto focus:outline-none">
-                <div class="py-6">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 mb-6 no-print">
-                        <h1 class="text-2xl font-semibold text-gray-900">Dashboard Overview</h1>
-                    </div>
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                        {% block dashboard_content %}{% endblock %}
-                    </div>
-                </div>
-            </main>
-        </div>
+    <div class="nav-group">
+      <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><i class="fa-solid fa-gauge-high" style="width:1.1rem"></i> Overview</a>
     </div>
 
+    <div class="nav-group">
+      <p class="nav-title">Sales</p>
+      <a class="nav-link {% if 'quotation' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'quotation_list' %}"><i class="fa-solid fa-file-signature" style="width:1.1rem"></i> Quotations</a>
+      <a class="nav-link" href="{% url 'client_list' %}"><i class="fa-solid fa-users" style="width:1.1rem"></i> Clients</a>
+      <a class="nav-link" href="{% url 'product_list' %}"><i class="fa-solid fa-boxes-stacked" style="width:1.1rem"></i> Catalog</a>
+      <a class="nav-link {% if 'enquir' in request.resolver_match.url_name or 'message' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'enquiry_list' %}">
+        <i class="fa-solid fa-inbox" style="width:1.1rem"></i> Enquiries
+        {% if unread_enquiries %}<span class="nav-badge">{{ unread_enquiries }}</span>{% endif %}
+      </a>
+    </div>
+
+    {% if user.is_finance %}
+    <div class="nav-group">
+      <p class="nav-title">Finance</p>
+      <a class="nav-link" href="{% url 'invoice_list' %}"><i class="fa-solid fa-file-invoice-dollar" style="width:1.1rem"></i> Invoices</a>
+      <a class="nav-link" href="{% url 'payment_list' %}"><i class="fa-solid fa-money-bill-transfer" style="width:1.1rem"></i> Payments</a>
+      <a class="nav-link" href="{% url 'receipt_list' %}"><i class="fa-solid fa-receipt" style="width:1.1rem"></i> Receipts</a>
+    </div>
+    {% endif %}
+
+    {% if user.can_manage_settings %}
+    <div class="nav-group">
+      <p class="nav-title">Administration</p>
+      <a class="nav-link" href="{% url 'company_settings' %}"><i class="fa-solid fa-building" style="width:1.1rem"></i> Company</a>
+      <a class="nav-link" href="{% url 'tax_categories' %}"><i class="fa-solid fa-percent" style="width:1.1rem"></i> Tax categories</a>
+      <a class="nav-link" href="{% url 'user_list' %}"><i class="fa-solid fa-user-gear" style="width:1.1rem"></i> Users</a>
+      <a class="nav-link" href="{% url 'audit_log' %}"><i class="fa-solid fa-clipboard-list" style="width:1.1rem"></i> Audit log</a>
+    </div>
+    {% endif %}
+
+    <div class="nav-group" style="margin-top:auto">
+      <a class="nav-link" href="{% url 'home' %}"><i class="fa-solid fa-globe" style="width:1.1rem"></i> View website</a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button class="nav-link" type="submit" style="width:100%;background:none;border:none;cursor:pointer;font:inherit;text-align:left"><i class="fa-solid fa-right-from-bracket" style="width:1.1rem"></i> Sign out</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div class="flex" style="gap:.8rem;align-items:center">
+        <button class="btn btn-ghost btn-sm" data-sidebar-toggle aria-label="Toggle menu" style="border:1px solid var(--line)"><i class="fa-solid fa-bars"></i></button>
+        <h1 style="font-size:1.25rem;margin:0">{% block page_title %}{% endblock %}</h1>
+      </div>
+      <div class="flex" style="gap:.8rem;align-items:center">
+        <span class="badge {{ user|role_badge }}">{{ user.get_role_display }}</span>
+        <span class="small muted">{{ user.get_full_name|default:user.username }}</span>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}" data-auto>{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+<script src="{% static 'js/app.js' %}" defer></script>
 </body>
 </html>

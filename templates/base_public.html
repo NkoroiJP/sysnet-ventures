@@ -1,0 +1,132 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ meta_title|default:'Sysnet Technologies — ICT Solutions in Kenya' }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ meta_description|default:'Sysnet Technologies provides ICT solutions, enterprise networking, fiber and GPON solutions, software development, cloud, cybersecurity and managed IT services in Kenya.' }}{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_title %}{{ meta_title|default:'Sysnet Technologies' }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ meta_description|default:'' }}{% endblock %}">
+  <meta property="og:site_name" content="{{ company.name }}">
+  {% block og_image %}{% endblock %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231d4ed8'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <a href="#main" class="btn btn-ghost btn-sm" style="position:absolute;left:-9999px" onfocus="this.style.left='8px';this.style.top='8px';this.style.zIndex=200" onblur="this.style.left='-9999px'">Skip to content</a>
+
+  <header class="site-header" style="position:sticky;top:0;z-index:60;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;height:4.25rem;gap:1rem">
+      <a href="/" class="brand-link" style="display:flex;align-items:center;gap:.65rem;text-decoration:none;color:var(--ink)" aria-label="{{ company.name }} home">
+        {% if company.logo %}
+          <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="height:2.4rem;width:auto">
+        {% else %}
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:2.4rem;height:2.4rem;border-radius:.6rem;background:var(--brand-600);color:#fff;font-weight:800;font-size:1.15rem">S</span>
+        {% endif %}
+        <span style="font-weight:800;font-size:1.05rem;letter-spacing:-.01em">{{ company.name }}</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Main navigation" style="display:none;gap:1.4rem;align-items:center">
+        <a href="{% url 'home' %}" style="color:var(--ink-soft);font-weight:500">Home</a>
+        <a href="{% url 'about' %}" style="color:var(--ink-soft);font-weight:500">About</a>
+        <a href="{% url 'service_list' %}" style="color:var(--ink-soft);font-weight:500">Services</a>
+        <a href="{% url 'product_catalog' %}" style="color:var(--ink-soft);font-weight:500">Products</a>
+        <a href="{% url 'portfolio' %}" style="color:var(--ink-soft);font-weight:500">Projects</a>
+        <a href="{% url 'contact' %}" style="color:var(--ink-soft);font-weight:500">Contact</a>
+      </nav>
+
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <a href="{% url 'request_quote' %}" class="btn btn-primary btn-sm desktop-nav" style="display:none">Request a Quote</a>
+        {% if user.is_authenticated %}
+          <a href="{% if user.is_client %}{% url 'portal_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-outline btn-sm">My Account</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-outline btn-sm">Client Login</a>
+        {% endif %}
+        <button class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" style="display:inline-flex;background:none;border:none;font-size:1.3rem;padding:.4rem;cursor:pointer;color:var(--ink)">☰</button>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobile-nav" hidden style="border-top:1px solid var(--line);background:#fff;padding:1rem 1.25rem 1.5rem">
+      <nav aria-label="Mobile navigation" style="display:grid;gap:.25rem">
+        <a href="{% url 'home' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">Home</a>
+        <a href="{% url 'about' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">About</a>
+        <a href="{% url 'service_list' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">Services</a>
+        <a href="{% url 'product_catalog' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">Products</a>
+        <a href="{% url 'portfolio' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">Projects</a>
+        <a href="{% url 'contact' %}" style="padding:.6rem 0;font-weight:500;color:var(--ink)">Contact</a>
+        <a href="{% url 'request_quote' %}" class="btn btn-primary mt-2">Request a Quote</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer style="background:var(--brand-900);color:#94a3b8;margin-top:auto">
+    <div class="container" style="padding:3.5rem 1.25rem 2rem">
+      <div class="grid-3">
+        <div>
+          <h3 style="color:#fff;font-size:1.05rem">{{ company.name }}</h3>
+          <p class="small">{{ company.tagline|default:'ICT solutions for growing businesses.' }}</p>
+          {% if company.physical_address %}<p class="small"><i class="fa-solid fa-location-dot" style="width:1.1rem"></i> {{ company.physical_address|linebreaksbr }}</p>{% endif %}
+          <p class="small"><i class="fa-solid fa-phone" style="width:1.1rem"></i> <a href="tel:{{ company.phone }}" style="color:#94a3b8">{{ company.phone }}</a></p>
+          {% if company.email %}<p class="small"><i class="fa-solid fa-envelope" style="width:1.1rem"></i> <a href="mailto:{{ company.email }}" style="color:#94a3b8">{{ company.email }}</a></p>{% endif %}
+          {% if whatsapp_link %}<p class="small"><i class="fa-brands fa-whatsapp" style="width:1.1rem"></i> <a href="{{ whatsapp_link }}" target="_blank" rel="noopener" style="color:#94a3b8">Chat on WhatsApp</a></p>{% endif %}
+        </div>
+        <div>
+          <h3 style="color:#fff;font-size:1.05rem">Services</h3>
+          <ul style="list-style:none;padding:0;margin:0;font-size:.88rem;display:grid;gap:.45rem">
+            {% for service in footer_services %}
+              <li><a href="{% url 'service_detail' service.slug %}" style="color:#94a3b8">{{ service.title }}</a></li>
+            {% empty %}
+              <li><a href="{% url 'service_list' %}" style="color:#94a3b8">All services</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h3 style="color:#fff;font-size:1.05rem">Company</h3>
+          <ul style="list-style:none;padding:0;margin:0;font-size:.88rem;display:grid;gap:.45rem">
+            <li><a href="{% url 'about' %}" style="color:#94a3b8">About us</a></li>
+            <li><a href="{% url 'portfolio' %}" style="color:#94a3b8">Projects</a></li>
+            <li><a href="{% url 'request_quote' %}" style="color:#94a3b8">Request a quote</a></li>
+            <li><a href="{% url 'login' %}" style="color:#94a3b8">Client portal</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(148,163,184,.2);margin-top:2.5rem;padding-top:1.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.8rem">
+        <span>© {% now "Y" %} {{ company.name }}. All rights reserved.</span>
+        <span>ICT Solutions · Kenya</span>
+      </div>
+    </div>
+  </footer>
+
+  <style>
+    @media (min-width: 56rem) {
+      .desktop-nav[style*="display:none"] { display:flex !important; }
+      .desktop-nav { display:flex !important; }
+      .mobile-menu-btn { display:none !important; }
+    }
+  </style>
+  <script>
+    (function () {
+      var btn = document.querySelector('.mobile-menu-btn');
+      var nav = document.getElementById('mobile-nav');
+      if (btn && nav) {
+        btn.addEventListener('click', function () {
+          var open = !nav.hidden;
+          nav.hidden = open;
+          btn.setAttribute('aria-expanded', String(!open));
+          btn.textContent = open ? '☰' : '✕';
+        });
+      }
+    })();
+  </script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

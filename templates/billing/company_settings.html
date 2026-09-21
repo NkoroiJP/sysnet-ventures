@@ -1,81 +1,137 @@
 {% extends 'billing/base_dashboard.html' %}
+{% block title %}Company settings{% endblock %}
+{% block page_title %}Company settings{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" style="max-width:52rem">
+  {% csrf_token %}
 
-{% block dashboard_content %}
-<div class="max-w-3xl mx-auto bg-white shadow rounded-lg">
-    <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Company Settings</h3>
-        <p class="mt-1 text-sm text-gray-500">Update your company information used in invoices and quotations.</p>
+  <div class="card mb-2">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Identity</h3></div>
+    <div class="card-pad">
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Business name *</label>
+          <input class="input" name="name" required value="{{ form.name.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>Tagline</label>
+          <input class="input" name="tagline" value="{{ form.tagline.value|default:'' }}">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Logo</label>
+          <input class="input" type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+          {% if form.logo.value %}<p class="help">A logo is currently uploaded. Uploading a new file replaces it.</p>{% endif %}
+        </div>
+        <div class="field">
+          <label>Website</label>
+          <input class="input" type="url" name="website" value="{{ form.website.value|default:'' }}" placeholder="https://…">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Business phone</label>
+          <input class="input" name="phone" value="{{ form.phone.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>WhatsApp number (digits only)</label>
+          <input class="input" name="whatsapp_number" value="{{ form.whatsapp_number.value|default:'' }}" placeholder="254710779799">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Business email</label>
+          <input class="input" type="email" name="email" value="{{ form.email.value|default:'' }}">
+        </div>
+        <div class="field">
+          <label>Currency</label>
+          <input class="input" name="currency" value="{{ form.currency.value|default:'KES' }}">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Physical address</label>
+          <textarea class="input" name="physical_address" rows="2">{{ form.physical_address.value|default:'' }}</textarea>
+        </div>
+        <div class="field">
+          <label>Postal address</label>
+          <textarea class="input" name="postal_address" rows="2">{{ form.postal_address.value|default:'' }}</textarea>
+        </div>
+      </div>
+      <p class="help small">Leave unknown details (email, address, KRA PIN, VAT number) blank until verified — nothing is invented.</p>
     </div>
-    <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
-        {% csrf_token %}
+  </div>
 
-        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            <div class="sm:col-span-6">
-                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">Company Name</label>
-                {{ form.name }}
-                {{ form.name.errors }}
-            </div>
-
-            <div class="sm:col-span-6">
-                <label for="{{ form.logo.id_for_label }}" class="block text-sm font-medium text-gray-700">Company Logo</label>
-                {{ form.logo }}
-                {{ form.logo.errors }}
-                {% if form.instance.logo %}
-                <div class="mt-2">
-                    <img src="{{ form.instance.logo.url }}" alt="Current logo" class="h-16 w-auto">
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email Address</label>
-                {{ form.email }}
-                {{ form.email.errors }}
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Phone Number</label>
-                {{ form.phone }}
-                {{ form.phone.errors }}
-            </div>
-
-            <div class="sm:col-span-6">
-                <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700">Address</label>
-                {{ form.address }}
-                {{ form.address.errors }}
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700">Website</label>
-                {{ form.website }}
-                {{ form.website.errors }}
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.tax_number.id_for_label }}" class="block text-sm font-medium text-gray-700">Tax/PIN Number</label>
-                {{ form.tax_number }}
-                {{ form.tax_number.errors }}
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.currency.id_for_label }}" class="block text-sm font-medium text-gray-700">Currency</label>
-                {{ form.currency }}
-                {{ form.currency.errors }}
-                <p class="text-xs text-gray-400 mt-1">Shown on all documents (e.g. KES, USD, EUR)</p>
-            </div>
-
-            <div class="sm:col-span-3">
-                <label for="{{ form.default_tax_rate.id_for_label }}" class="block text-sm font-medium text-gray-700">Default Tax Rate (%)</label>
-                {{ form.default_tax_rate }}
-                {{ form.default_tax_rate.errors }}
-                <p class="text-xs text-gray-400 mt-1">Pre-filled on new quotes and invoices (0 to disable)</p>
-            </div>
+  <div class="card mb-2">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Tax registration</h3></div>
+    <div class="card-pad">
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>KRA PIN</label>
+          <input class="input" name="kra_pin" value="{{ form.kra_pin.value|default:'' }}">
         </div>
-
-        <div class="flex justify-end pt-4">
-            <a href="{% url 'dashboard' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 mr-3">Cancel</a>
-            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">Save Settings</button>
+        <div class="field">
+          <label>VAT registration number</label>
+          <input class="input" name="vat_number" value="{{ form.vat_number.value|default:'' }}">
         </div>
-    </form>
-</div>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" name="vat_registered" {% if form.vat_registered.value %}checked{% endif %}>
+        Business is VAT registered
+      </label>
+      <p class="help small">⚠ Validate all tax settings against current KRA requirements and the business's actual tax status before issuing VAT invoices.</p>
+    </div>
+  </div>
+
+  <div class="card mb-2">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Document numbering &amp; defaults</h3></div>
+    <div class="card-pad">
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field"><label>Quotation prefix</label><input class="input" name="quotation_prefix" value="{{ form.quotation_prefix.value|default:'QTN' }}"></div>
+        <div class="field"><label>Invoice prefix</label><input class="input" name="invoice_prefix" value="{{ form.invoice_prefix.value|default:'INV' }}"></div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field"><label>Receipt prefix</label><input class="input" name="receipt_prefix" value="{{ form.receipt_prefix.value|default:'RCP' }}"></div>
+        <div class="field"><label>Credit note prefix</label><input class="input" name="credit_note_prefix" value="{{ form.credit_note_prefix.value|default:'CN' }}"></div>
+      </div>
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field"><label>Quotation validity (days)</label><input class="input" type="number" min="1" name="quotation_validity_days" value="{{ form.quotation_validity_days.value|default:30 }}"></div>
+        <div class="field"><label>Invoice payment terms (days)</label><input class="input" type="number" min="1" name="invoice_payment_terms_days" value="{{ form.invoice_payment_terms_days.value|default:30 }}"></div>
+      </div>
+      <div class="field">
+        <label>Payment instructions (shown on invoices)</label>
+        <textarea class="input" name="payment_instructions" rows="3">{{ form.payment_instructions.value|default:'' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Document footer</label>
+        <textarea class="input" name="document_footer" rows="2">{{ form.document_footer.value|default:'' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Default terms &amp; conditions</label>
+        <textarea class="input" name="terms_and_conditions" rows="5">{{ form.terms_and_conditions.value|default:'' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-2">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Branding</h3></div>
+    <div class="card-pad">
+      <div class="grid-2" style="gap:0 1rem">
+        <div class="field">
+          <label>Brand primary color</label>
+          <input class="input" type="color" name="brand_primary" value="{{ form.brand_primary.value|default:'#1d4ed8' }}" style="height:2.6rem;padding:.25rem">
+        </div>
+        <div class="field">
+          <label>Brand accent color</label>
+          <input class="input" type="color" name="brand_accent" value="{{ form.brand_accent.value|default:'#0ea5e9' }}" style="height:2.6rem;padding:.25rem">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex mb-3" style="gap:.6rem">
+    <button type="submit" class="btn btn-primary">Save settings</button>
+  </div>
+</form>
 {% endblock %}

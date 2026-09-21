@@ -1,0 +1,62 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Clients{% endblock %}
+{% block page_title %}Clients{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <form method="get" class="flex" style="gap:.5rem;flex:1;max-width:30rem">
+    <input class="input" name="q" placeholder="Search name, email, phone…" value="{{ search_query }}">
+    <select class="input" name="status" style="width:auto">
+      <option value="">All statuses</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-outline btn-sm" type="submit">Filter</button>
+  </form>
+  <a href="{% url 'client_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add client</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr><th>Client</th><th>Type</th><th>Contact</th><th>Status</th><th class="num">Outstanding</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+          <tr>
+            <td>
+              <a href="{% url 'client_detail' client.pk %}" style="font-weight:600">{{ client.name }}</a>
+              {% if client.contact_person %}<div class="small muted">{{ client.contact_person }}</div>{% endif %}
+            </td>
+            <td><span class="badge {% if client.client_type == 'business' %}badge-blue{% else %}badge-purple{% endif %}">{{ client.get_client_type_display }}</span></td>
+            <td class="small">
+              {% if client.email %}<div>{{ client.email }}</div>{% endif %}
+              {% if client.phone %}<div class="muted">{{ client.phone }}</div>{% endif %}
+            </td>
+            <td><span class="badge {% if client.status == 'active' %}badge-green{% elif client.status == 'prospect' %}badge-amber{% else %}badge-gray{% endif %}">{{ client.get_status_display }}</span></td>
+            <td class="num">KSh {{ client.outstanding }}</td>
+            <td class="text-right"><a href="{% url 'client_update' client.pk %}" class="btn btn-ghost btn-sm">Edit</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6"><div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-users"></i></div>
+            <p>{% if search_query %}No clients match your search.{% else %}No clients yet. Create your first client to start quoting.{% endif %}</p>
+            <a href="{% url 'client_create' %}" class="btn btn-primary btn-sm">Add client</a>
+          </div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+  <div class="flex-between mt-2 small muted">
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex" style="gap:.4rem">
+      {% if page_obj.has_previous %}<a class="btn btn-outline btn-sm" href="?q={{ search_query }}&status={{ status_filter }}&page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+      {% if page_obj.has_next %}<a class="btn btn-outline btn-sm" href="?q={{ search_query }}&status={{ status_filter }}&page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

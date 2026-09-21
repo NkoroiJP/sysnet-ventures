@@ -1,0 +1,88 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container text-center" style="padding-block:3.5rem">
+    <span class="eyebrow">Contact</span>
+    <h1>Let's talk</h1>
+    <p style="max-width:34rem;margin:0 auto;color:var(--ink-soft)">Questions, support or a project brief — we respond quickly.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container grid-2" style="gap:3rem;align-items:start">
+    <div>
+      <h2>Reach us directly</h2>
+      <div style="display:grid;gap:1rem" class="mt-2">
+        <a class="card card-pad flex" href="tel:{{ company.phone }}" style="gap:1rem;align-items:center;text-decoration:none;color:inherit">
+          <span style="width:2.75rem;height:2.75rem;border-radius:.7rem;background:var(--brand-50);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-size:1.1rem"><i class="fa-solid fa-phone"></i></span>
+          <div><strong>{{ company.phone }}</strong><p class="small muted" style="margin:0">Call us during business hours</p></div>
+        </a>
+        {% if whatsapp_link %}
+        <a class="card card-pad flex" href="{{ whatsapp_link }}" target="_blank" rel="noopener" style="gap:1rem;align-items:center;text-decoration:none;color:inherit">
+          <span style="width:2.75rem;height:2.75rem;border-radius:.7rem;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.1rem"><i class="fa-brands fa-whatsapp"></i></span>
+          <div><strong>WhatsApp</strong><p class="small muted" style="margin:0">Chat with our team</p></div>
+        </a>
+        {% endif %}
+        {% if company.email %}
+        <a class="card card-pad flex" href="mailto:{{ company.email }}" style="gap:1rem;align-items:center;text-decoration:none;color:inherit">
+          <span style="width:2.75rem;height:2.75rem;border-radius:.7rem;background:var(--brand-50);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-size:1.1rem"><i class="fa-solid fa-envelope"></i></span>
+          <div><strong>{{ company.email }}</strong><p class="small muted" style="margin:0">Email us anytime</p></div>
+        </a>
+        {% endif %}
+        {% if company.physical_address %}
+        <div class="card card-pad flex" style="gap:1rem;align-items:center">
+          <span style="width:2.75rem;height:2.75rem;border-radius:.7rem;background:var(--brand-50);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-size:1.1rem"><i class="fa-solid fa-location-dot"></i></span>
+          <div><strong>Visit us</strong><p class="small muted" style="margin:0">{{ company.physical_address|linebreaksbr }}</p></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h2 style="font-size:1.2rem">Send a message</h2>
+      {% if sent %}
+        <div class="alert alert-success"><strong>Message sent.</strong> Thank you for reaching out — we'll get back to you shortly.</div>
+      {% endif %}
+      {% if rate_limited %}
+        <div class="alert alert-warning">Too many messages from your connection. Please try again later or call us.</div>
+      {% endif %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="grid-2" style="gap:0 1rem">
+          <div class="field">
+            <label for="ct-name">Your name *</label>
+            <input class="input {% if form.name.errors %}error{% endif %}" id="ct-name" name="name" required value="{{ form.name.value|default:'' }}">
+            {% if form.name.errors %}<p class="error-text">{{ form.name.errors.0 }}</p>{% endif %}
+          </div>
+          <div class="field">
+            <label for="ct-email">Email *</label>
+            <input class="input {% if form.email.errors %}error{% endif %}" type="email" id="ct-email" name="email" required value="{{ form.email.value|default:'' }}">
+            {% if form.email.errors %}<p class="error-text">{{ form.email.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+        <div class="grid-2" style="gap:0 1rem">
+          <div class="field">
+            <label for="ct-phone">Phone</label>
+            <input class="input" id="ct-phone" name="phone" value="{{ form.phone.value|default:'' }}">
+          </div>
+          <div class="field">
+            <label for="ct-category">Topic *</label>
+            <select class="input" id="ct-category" name="category">
+              {% for value, label in form.fields.category.choices %}
+                <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ct-message">Message *</label>
+          <textarea class="input {% if form.message.errors %}error{% endif %}" id="ct-message" name="message" rows="5" required>{{ form.message.value|default:'' }}</textarea>
+          {% if form.message.errors %}<p class="error-text">{{ form.message.errors.0 }}</p>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Send message</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

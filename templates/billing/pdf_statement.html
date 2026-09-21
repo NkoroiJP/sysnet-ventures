@@ -1,0 +1,56 @@
+{% extends 'billing/pdf_base.html' %}
+{% block doc %}
+<div class="brand-header">
+  <table style="margin:0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="border:none;width:60%">
+        {% if company.logo %}<img src="{{ company.logo.url }}" style="height:42pt" /><br/>{% endif %}
+        <span class="brand-name">{{ company.name }}</span><br/>
+        <span class="brand-meta">Tel: {{ company.phone }}{% if company.email %} · {{ company.email }}{% endif %}</span>
+      </td>
+      <td style="border:none;text-align:right" class="num">
+        <div class="doc-title">STATEMENT</div>
+        <div class="small muted">Generated: {% now 'd M Y' %}</div>
+        {% if date_from or date_to %}<div class="small muted">Period: {{ date_from|default:'start' }} → {{ date_to|default:'today' }}</div>{% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<table style="margin-top:0" cellpadding="0" cellspacing="0">
+  <tr><td style="border:none;width:55%;background-color:#f8fafc;padding:8pt">
+    <strong>ACCOUNT HOLDER</strong><br/>
+    {{ client.name }}<br/>
+    {% if client.billing_address %}{{ client.billing_address|linebreaksbr }}{% endif %}
+    {% if client.email %}{{ client.email }}{% endif %}
+  </td></tr>
+</table>
+
+<h3>Transactions</h3>
+<table cellpadding="0" cellspacing="0">
+  <thead>
+    <tr><th style="width:14%">Date</th><th style="width:14%">Type</th><th style="width:18%">Reference</th>
+        <th style="width:14%" class="num">Debit</th><th style="width:14%" class="num">Credit</th><th style="width:16%" class="num">Balance</th></tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+      <tr>
+        <td>{{ entry.date|date:'d M Y' }}</td>
+        <td>{{ entry.type }}</td>
+        <td>{{ entry.ref }}<br/><span class="small muted">{{ entry.description }}</span></td>
+        <td class="num">{% if entry.debit > 0 %}{{ entry.debit }}{% endif %}</td>
+        <td class="num">{% if entry.credit > 0 %}{{ entry.credit }}{% endif %}</td>
+        <td class="num"><strong>{{ entry.balance }}</strong></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="muted">No transactions in this period.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if entries %}
+<table class="totals" style="width:40%;margin-left:60%" cellpadding="0" cellspacing="0">
+  <tr><td class="grand">CLOSING BALANCE</td><td class="num grand">KES {{ entries.last.balance }}</td></tr>
+</table>
+{% endif %}
+{% endblock %}

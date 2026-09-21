@@ -1,0 +1,40 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container text-center" style="padding-block:3.5rem">
+    <span class="eyebrow">Portfolio</span>
+    <h1>Projects we're proud of</h1>
+    <p style="max-width:38rem;margin:0 auto;color:var(--ink-soft)">A selection of engagements delivered across Kenya.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="grid-2">
+      {% for project in projects %}
+        <div class="card card-hover">
+          {% if project.image %}<img src="{{ project.image.url }}" alt="{{ project.title }}" loading="lazy" style="height:13rem;width:100%;object-fit:cover;border-radius:.6rem .6rem 0 0">{% endif %}
+          <div class="card-pad">
+            <div class="flex-between">
+              <span class="badge badge-blue">{{ project.category|default:'Project' }}</span>
+              {% if project.completed_on %}<span class="small muted">{{ project.completed_on|date:'M Y' }}</span>{% endif %}
+            </div>
+            <h2 style="font-size:1.2rem;margin:.6rem 0 .3rem">{{ project.title }}</h2>
+            <p class="small muted">{{ project.description|linebreaksbr }}</p>
+            {% if project.technologies %}
+              <div class="flex" style="gap:.4rem;flex-wrap:wrap">
+                {% for tech in project.technologies %}<span class="badge badge-gray">{{ tech }}</span>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="icon"><i class="fa-solid fa-diagram-project"></i></div>
+          <p>Project showcase coming soon.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

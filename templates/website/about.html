@@ -1,0 +1,68 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container text-center" style="padding-block:3.5rem">
+    <span class="eyebrow">About us</span>
+    <h1 style="max-width:46rem;margin-inline:auto">Your partner for practical, reliable technology</h1>
+    <p style="max-width:40rem;margin:0 auto;color:var(--ink-soft);font-size:1.08rem">
+      {{ company.name }} is a Kenyan ICT company helping organisations build, secure and run the
+      technology their operations depend on.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container grid-2" style="gap:3rem;align-items:start">
+    <div>
+      <h2>Who we are</h2>
+      <p class="muted">
+        We provide ICT solutions, enterprise networking, fiber and GPON solutions, computer sales and
+        maintenance, software development, cloud services, cybersecurity, managed IT services and IT
+        automation for SMEs, institutions and corporate clients across Kenya.
+      </p>
+      <p class="muted">
+        Our engineers combine hands-on field experience with enterprise-grade methodology. Every project is
+        surveyed, documented, tested and handed over properly — and every managed engagement is backed by a
+        clear SLA. We measure ourselves on one thing: technology that keeps working for your business.
+      </p>
+    </div>
+    <div style="display:grid;gap:1rem">
+      <div class="card card-pad">
+        <h3 style="display:flex;align-items:center;gap:.6rem;font-size:1.02rem"><i class="fa-solid fa-bullseye" style="color:var(--brand-600)"></i> Mission</h3>
+        <p class="small muted" style="margin:0">To deliver dependable, well-engineered ICT solutions that help Kenyan businesses and institutions work smarter, safer and faster.</p>
+      </div>
+      <div class="card card-pad">
+        <h3 style="display:flex;align-items:center;gap:.6rem;font-size:1.02rem"><i class="fa-solid fa-eye" style="color:var(--brand-600)"></i> Vision</h3>
+        <p class="small muted" style="margin:0">To be the technology partner organisations trust most — for infrastructure, software and everything in between.</p>
+      </div>
+      <div class="card card-pad">
+        <h3 style="display:flex;align-items:center;gap:.6rem;font-size:1.02rem"><i class="fa-solid fa-gem" style="color:var(--brand-600)"></i> Values</h3>
+        <p class="small muted" style="margin:0">Integrity in every quotation. Craftsmanship in every installation. Accountability after every go-live.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--bg-soft)" class="section">
+  <div class="container">
+    <h2 class="text-center">Our approach</h2>
+    <div class="grid-3 mt-3" style="counter-reset:step">
+      <div class="card card-pad"><span class="badge badge-blue">1 · Assess</span><p class="small muted mt-1" style="margin-bottom:0">We start with a proper survey of your environment, needs and constraints — no guesswork.</p></div>
+      <div class="card card-pad"><span class="badge badge-blue">2 · Design</span><p class="small muted mt-1" style="margin-bottom:0">You receive a clear proposal with scope, deliverables and transparent pricing.</p></div>
+      <div class="card card-pad"><span class="badge badge-blue">3 · Deliver</span><p class="small muted mt-1" style="margin-bottom:0">Certified engineers implement, test and document the solution, then train your team.</p></div>
+      <div class="card card-pad"><span class="badge badge-blue">4 · Support</span><p class="small muted mt-1" style="margin-bottom:0">Managed plans, preventive maintenance and a responsive helpdesk keep things running.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section text-center">
+  <div class="container">
+    <h2>Let's talk about your project</h2>
+    <p class="muted">A short conversation is the fastest way to see if we're a fit.</p>
+    <div class="flex" style="gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <a href="{% url 'request_quote' %}" class="btn btn-primary">Request a Quote</a>
+      <a href="{% url 'contact' %}" class="btn btn-outline">Contact us</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}{{ client.name }}{% endblock %}
+{% block page_title %}{{ client.name }}{% endblock %}
+{% block content %}
+
+<div class="flex-between mb-2">
+  <div class="flex" style="gap:.5rem;flex-wrap:wrap">
+    <span class="badge {% if client.status == 'active' %}badge-green{% elif client.status == 'prospect' %}badge-amber{% else %}badge-gray{% endif %}">{{ client.get_status_display }}</span>
+    <span class="badge badge-blue">{{ client.get_client_type_display }}</span>
+    {% if client.kra_pin %}<span class="badge badge-gray">PIN: {{ client.kra_pin }}</span>{% endif %}
+  </div>
+  <div class="flex" style="gap:.5rem">
+    <a href="{% url 'client_statement' client.pk %}" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-lines"></i> Statement</a>
+    <a href="{% url 'quotation_create' %}?client={{ client.pk }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New quotation</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-label">Total invoiced</div><div class="stat-value">KSh {{ client.total_invoiced }}</div></div>
+  <div class="stat-card"><div class="stat-label">Total paid</div><div class="stat-value">KSh {{ client.total_paid }}</div></div>
+  <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value">KSh {{ client.outstanding }}</div></div>
+  <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value {% if client.overdue_amount > 0 %}" style="color:#b91c1c{% endif %}">KSh {{ client.overdue_amount }}</div></div>
+</div>
+
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Invoices</h3></div>
+    {% for invoice in invoices %}
+      <a href="{% url 'invoice_detail' invoice.pk %}" class="flex-between" style="padding:.65rem 1.25rem;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+        <div><strong class="mono small">{{ invoice.number }}</strong><div class="small muted">{{ invoice.issue_date|date:'d M Y' }} · due {{ invoice.due_date|date:'d M Y' }}</div></div>
+        <div class="text-right"><strong class="small">KSh {{ invoice.total }}</strong><div><span class="badge {% if invoice.effective_status == 'paid' %}badge-green{% elif invoice.effective_status == 'overdue' %}badge-red{% else %}badge-amber{% endif %}">{{ invoice.get_effective_status_display|default:invoice.get_status_display }}</span></div></div>
+      </a>
+    {% empty %}<div class="empty-state"><p>No invoices yet.</p></div>{% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Quotations</h3></div>
+    {% for quotation in quotations %}
+      <a href="{% url 'quotation_detail' quotation.pk %}" class="flex-between" style="padding:.65rem 1.25rem;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+        <div><strong class="mono small">{{ quotation.number }}</strong><div class="small muted">{{ quotation.issue_date|date:'d M Y' }} · rev {{ quotation.revision }}</div></div>
+        <div class="text-right"><strong class="small">KSh {{ quotation.total }}</strong><div><span class="badge badge-blue">{{ quotation.get_status_display }}</span></div></div>
+      </a>
+    {% empty %}<div class="empty-state"><p>No quotations yet.</p></div>{% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Payments</h3></div>
+    {% for payment in payments %}
+      <a href="{% url 'payment_detail' payment.pk %}" class="flex-between" style="padding:.65rem 1.25rem;border-bottom:1px solid var(--line);text-decoration:none;color:inherit">
+        <div><strong class="small">KSh {{ payment.amount }}</strong><div class="small muted">{{ payment.get_method_display }} · {{ payment.paid_on|date:'d M Y' }}</div></div>
+        <span class="badge {% if payment.status == 'confirmed' %}badge-green{% else %}badge-amber{% endif %}">{{ payment.get_status_display }}</span>
+      </a>
+    {% empty %}<div class="empty-state"><p>No payments yet.</p></div>{% endfor %}
+  </div>
+
+  <div class="card card-pad">
+    <h3 style="margin:0 0 .8rem;font-size:1rem">Client details</h3>
+    <div style="display:grid;gap:.5rem" class="small">
+      {% if client.email %}<div><span class="muted">Email:</span> {{ client.email }}</div>{% endif %}
+      {% if client.phone %}<div><span class="muted">Phone:</span> {{ client.phone }}</div>{% endif %}
+      {% if client.billing_address %}<div><span class="muted">Billing:</span> {{ client.billing_address|linebreaksbr }}</div>{% endif %}
+      {% if client.delivery_address %}<div><span class="muted">Delivery:</span> {{ client.delivery_address|linebreaksbr }}</div>{% endif %}
+      {% if client.vat_details %}<div><span class="muted">VAT:</span> {{ client.vat_details }}</div>{% endif %}
+      {% if client.notes %}<div><span class="muted">Notes:</span> {{ client.notes }}</div>{% endif %}
+    </div>
+    <div class="flex mt-2" style="gap:.5rem">
+      <a href="{% url 'client_update' client.pk %}" class="btn btn-outline btn-sm">Edit details</a>
+      <form method="post" action="{% url 'client_archive' client.pk %}" data-confirm="Mark this client as inactive?">{% csrf_token %}
+        <button class="btn btn-ghost btn-sm" type="submit">Archive</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

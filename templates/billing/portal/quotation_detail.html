@@ -1,0 +1,70 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Quotation {{ quotation.number }}{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <div>
+    <h1 style="font-size:1.3rem;margin-bottom:.1rem">Quotation {{ quotation.number }}</h1>
+    <p class="small muted" style="margin:0">Issued {{ quotation.issue_date|date:'d M Y' }}{% if quotation.valid_until %} · valid until {{ quotation.valid_until|date:'d M Y' }}{% endif %}</p>
+  </div>
+  <a href="{% url 'portal_quotation_pdf' quotation.pk %}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+</div>
+
+{% if quotation.status == 'sent' or quotation.status == 'viewed' %}
+<div class="card card-pad mb-2" style="border-color:var(--brand-300);background:var(--brand-50)">
+  <h3 style="font-size:1rem;margin-bottom:.7rem">Your decision</h3>
+  <div class="flex" style="gap:.6rem;flex-wrap:wrap;align-items:center">
+    <form method="post" action="{% url 'portal_quotation_decide' quotation.pk %}" data-confirm="Accept this quotation? An invoice will be prepared.">
+      {% csrf_token %}<input type="hidden" name="decision" value="accept">
+      <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-check"></i> Accept quotation</button>
+    </form>
+    <form method="post" action="{% url 'portal_quotation_decide' quotation.pk %}">
+      {% csrf_token %}<input type="hidden" name="decision" value="revise">
+      <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-pen"></i> Request changes</button>
+    </form>
+    <form method="post" action="{% url 'portal_quotation_decide' quotation.pk %}" data-confirm="Reject this quotation?">
+      {% csrf_token %}<input type="hidden" name="decision" value="reject">
+      <button class="btn btn-ghost btn-sm" type="submit" style="color:#b91c1c">Reject</button>
+    </form>
+  </div>
+  <form method="post" action="{% url 'portal_quotation_decide' quotation.pk %}" class="mt-2">
+    {% csrf_token %}<input type="hidden" name="decision" value="accept">
+    <label>If you have a note for us (optional):</label>
+    <input class="input" name="note" placeholder="e.g. Purchase order number, questions…">
+  </form>
+</div>
+{% endif %}
+
+{% if quotation.status == 'accepted' %}<div class="alert alert-success"><strong>Accepted</strong> — our team is preparing your invoice.</div>{% endif %}
+{% if quotation.status == 'rejected' %}<div class="alert alert-info">This quotation was rejected. Contact us if this was a mistake.</div>{% endif %}
+{% if quotation.status == 'converted' %}<div class="alert alert-info">This quotation was accepted and converted to invoice <strong>{{ quotation.invoice.number }}</strong>.</div>{% endif %}
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data" style="min-width:0">
+      <thead><tr><th>Description</th><th>Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        {% for line in lines %}
+          <tr>
+            <td>
+              <strong class="small">{{ line.description }}</strong>
+              {% if line.tax_rate_snapshot > 0 %}<div class="small muted">VAT {{ line.tax_rate_snapshot }}%</div>{% endif %}
+            </td>
+            <td class="num">{{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}</td>
+            <td class="num">{{ line.unit_price }}</td>
+            <td class="num"><strong>{{ line.line_total }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-pad" style="background:var(--bg-soft);border-top:1px solid var(--line)">
+    <div style="max-width:16rem;margin-left:auto;display:grid;gap:.3rem" class="small">
+      <div class="flex-between"><span class="muted">Subtotal</span><span>KSh {{ quotation.subtotal }}</span></div>
+      <div class="flex-between"><span class="muted">VAT</span><span>KSh {{ quotation.vat_total }}</span></div>
+      <div class="flex-between" style="border-top:2px solid var(--brand-600);padding-top:.35rem"><strong>Total</strong><strong style="font-size:1.1rem;color:var(--brand-700)">KSh {{ quotation.total }}</strong></div>
+    </div>
+  </div>
+</div>
+
+{% if quotation.notes %}<div class="card card-pad mt-2"><h3 style="font-size:1rem">Notes</h3><p class="small muted" style="margin:0">{{ quotation.notes|linebreaksbr }}</p></div>{% endif %}
+{% endblock %}

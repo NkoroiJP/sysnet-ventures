@@ -1,71 +1,75 @@
-{% extends "billing/pdf_base.html" %}
-{% load humanize %}
-
-{% block doc_title %}RECEIPT{% endblock %}
-{% block doc_number %}{{ receipt.number }}{% endblock %}
-
-{% block doc_meta %}
-Date: {{ receipt.date|date:"M d, Y" }}<br>
-Invoice: {{ receipt.invoice.number }}
-{% endblock %}
-
-{% block doc_badge %}
-<span class="status-badge badge-green">Payment Received</span>
-{% endblock %}
-
-{% block client_title %}Received From{% endblock %}
-{% block client_block %}
-<div class="client-name">{{ receipt.invoice.customer.name }}</div>
-<div class="client-info">
-    {% if receipt.invoice.customer.address %}{{ receipt.invoice.customer.address|linebreaksbr }}<br>{% endif %}
-    {% if receipt.invoice.customer.email %}{{ receipt.invoice.customer.email }}{% endif %}
+{% extends 'billing/pdf_base.html' %}
+{% block doc %}
+<div class="brand-header">
+  <table style="margin:0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="border:none;width:60%">
+        {% if company.logo %}<img src="{{ company.logo.url }}" style="height:42pt" /><br/>{% endif %}
+        <span class="brand-name">{{ company.name }}</span><br/>
+        <span class="brand-meta">
+          {% if company.physical_address %}{{ company.physical_address|linebreaksbr }}<br/>{% endif %}
+          Tel: {{ company.phone }}{% if company.email %} · {{ company.email }}{% endif %}
+          {% if company.kra_pin %}<br/>KRA PIN: {{ company.kra_pin }}{% endif %}
+        </span>
+      </td>
+      <td style="border:none;text-align:right" class="num">
+        <div class="doc-title">RECEIPT</div>
+        <div class="doc-number">{{ receipt.number }}</div>
+        <div class="small muted">Issued: {{ receipt.issued_at|date:'d M Y' }}</div>
+      </td>
+    </tr>
+  </table>
 </div>
-{% endblock %}
 
-{% block content %}
-<table class="items">
-    <thead>
-        <tr>
-            <th style="width: 25%;">Payment Method</th>
-            <th style="width: 30%;">Reference</th>
-            <th style="width: 25%;">Note</th>
-            <th class="num" style="width: 20%;">Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>{{ receipt.payment_method|default:"Cash" }}</td>
-            <td>{{ receipt.reference|default:"&mdash;" }}</td>
-            <td>{{ receipt.note|truncatechars:60|default:"&mdash;" }}</td>
-            <td class="text-right" style="font-weight: bold;">{{ company.currency|default:"KES" }} {{ receipt.amount|floatformat:2|intcomma }}</td>
-        </tr>
-    </tbody>
+<table style="margin-top:0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="border:none;width:55%;background-color:#f8fafc;padding:8pt">
+      <strong>RECEIVED FROM</strong><br/>
+      {{ receipt.client.name }}<br/>
+      {% if receipt.client.billing_address %}{{ receipt.client.billing_address|linebreaksbr }}{% endif %}
+    </td>
+    <td style="border:none;width:45%;text-align:right">
+      <div style="font-size:15pt;font-weight:bold;color:#065f46">KES {{ receipt.amount }}</div>
+      <div class="small muted">{{ receipt.payment.get_method_display }}</div>
+    </td>
+  </tr>
 </table>
 
-<div class="totals">
-    <table>
-        <tr><td class="lbl">Invoice Total:</td><td class="val">{{ company.currency|default:"KES" }} {{ receipt.invoice.total_amount|floatformat:2|intcomma }}</td></tr>
-        <tr><td class="lbl">Total Paid:</td><td class="val paid-val">{{ company.currency|default:"KES" }} {{ receipt.invoice.amount_paid|floatformat:2|intcomma }}</td></tr>
-        <tr class="grand">
-            <td class="lbl">Balance:</td>
-            <td class="val {% if receipt.invoice.balance_due > 0 %}due-val{% else %}paid-val{% endif %}">{{ company.currency|default:"KES" }} {{ receipt.invoice.balance_due|floatformat:2|intcomma }}</td>
-        </tr>
-    </table>
-</div>
+<h3>Payment details</h3>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+    <tr><td style="width:30%;background-color:#f8fafc"><strong>Payment reference</strong></td><td style="border:none">{{ receipt.payment.number }}</td></tr>
+    <tr><td style="background-color:#f8fafc"><strong>Payment date</strong></td><td style="border:none">{{ receipt.payment.paid_on|date:'d M Y' }}</td></tr>
+    <tr><td style="background-color:#f8fafc"><strong>Method</strong></td><td style="border:none">{{ receipt.payment.get_method_display }}</td></tr>
+    {% if receipt.payment.transaction_ref %}<tr><td style="background-color:#f8fafc"><strong>Transaction ref</strong></td><td style="border:none">{{ receipt.payment.transaction_ref }}</td></tr>{% endif %}
+  </tbody>
+</table>
 
-{% if receipt.invoice.balance_due <= 0 %}
-<div class="notes-box" style="border-color: #a7f3d0; background-color: #ecfdf5;">
-    <div class="notes-title" style="color: #059669;">Settled</div>
-    This invoice has been paid in full. Thank you!
-</div>
-{% else %}
-<div class="notes-box">
-    <div class="notes-title">Outstanding</div>
-    Remaining balance of {{ company.currency|default:"KES" }} {{ receipt.invoice.balance_due|floatformat:2|intcomma }} on invoice {{ receipt.invoice.number }}.
-</div>
-{% endif %}
-{% endblock %}
+<h3>Applied to invoices</h3>
+<table cellpadding="0" cellspacing="0">
+  <thead><tr><th>Invoice</th><th>Issued</th><th class="num">Amount allocated</th></tr></thead>
+  <tbody>
+    {% for alloc in allocations %}
+      <tr><td>{{ alloc.invoice.number }}</td><td>{{ alloc.invoice.issue_date|date:'d M Y' }}</td><td class="num">{{ alloc.amount }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3" class="muted">Customer account credit — not yet allocated to a specific invoice.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-{% block footer_note %}
-<br>This is an official receipt for the payment described above.
+<p class="small muted" style="margin-top:18pt">This receipt acknowledges payment of the stated amount only. It is not a tax invoice.</p>
+
+<h3>Authorization</h3>
+<table cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="border:none;width:50%">
+      Received by: ______________________<br/>
+      Name: {{ receipt.issued_by|default:'' }}
+    </td>
+    <td style="border:none;width:50%">
+      Date: {{ receipt.issued_at|date:'d M Y' }}<br/>
+      Stamp:
+    </td>
+  </tr>
+</table>
 {% endblock %}

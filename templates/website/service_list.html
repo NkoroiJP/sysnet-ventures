@@ -1,0 +1,33 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container text-center" style="padding-block:3.5rem">
+    <span class="eyebrow">Services</span>
+    <h1>ICT services built around your business</h1>
+    <p style="max-width:40rem;margin:0 auto;color:var(--ink-soft)">
+      Explore our full range of technology services — each delivered with clear scope, documentation and ongoing support.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="grid-2">
+      {% for service in services %}
+        <a href="{% url 'service_detail' service.slug %}" class="card card-pad card-hover" style="text-decoration:none;color:inherit;display:flex;gap:1rem;align-items:flex-start">
+          <div style="flex-shrink:0;width:3rem;height:3rem;border-radius:.7rem;background:var(--brand-50);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-size:1.25rem">
+            <i class="fa-solid {{ service.icon|default:'fa-gear' }}"></i>
+          </div>
+          <div>
+            <h2 style="font-size:1.15rem;margin-bottom:.3rem">{{ service.title }}</h2>
+            <p class="small muted" style="margin:0">{{ service.summary }}</p>
+            <span class="small" style="color:var(--brand-600);font-weight:600;display:inline-block;margin-top:.5rem">Learn more →</span>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty-state" style="grid-column:1/-1"><p>Service catalogue coming soon.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

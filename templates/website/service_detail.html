@@ -1,0 +1,101 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container" style="padding-block:3rem">
+    <nav class="small muted" aria-label="Breadcrumb" style="margin-bottom:1rem">
+      <a href="{% url 'service_list' %}">Services</a> <i class="fa-solid fa-chevron-right" style="font-size:.6rem"></i> {{ service.title }}
+    </nav>
+    <div class="flex" style="gap:1.2rem;align-items:center">
+      <div style="width:4rem;height:4rem;border-radius:1rem;background:var(--brand-600);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0">
+        <i class="fa-solid {{ service.icon|default:'fa-gear' }}"></i>
+      </div>
+      <div>
+        <h1 style="margin-bottom:.25rem">{{ service.title }}</h1>
+        <p style="margin:0;color:var(--ink-soft)">{{ service.summary }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container grid-2" style="gap:3rem;align-items:start">
+    <div>
+      <h2>Overview</h2>
+      <p class="muted">{{ service.description|linebreaks }}</p>
+
+      {% if service.problems %}
+      <h3 class="mt-3">Business challenges we solve</h3>
+      <ul style="padding-left:1.1rem;color:var(--ink-soft)">
+        {% for problem in service.problems %}<li style="margin-bottom:.4rem">{{ problem }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if service.deliverables %}
+      <h3 class="mt-3">What you get</h3>
+      <div style="display:grid;gap:.55rem">
+        {% for deliverable in service.deliverables %}
+          <div class="flex" style="gap:.6rem;align-items:flex-start">
+            <i class="fa-solid fa-circle-check" style="color:var(--brand-600);margin-top:.2rem"></i>
+            <span class="small">{{ deliverable }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card card-pad" id="enquire" style="position:sticky;top:5.5rem">
+      <h3 style="font-size:1.1rem">Request a quote for this service</h3>
+      <p class="small muted">Tell us about your requirements and we'll respond with a structured quotation.</p>
+
+      {% if sent %}<div class="alert alert-success">Thank you — your enquiry has been received.</div>{% endif %}
+      {% if rate_limited %}<div class="alert alert-warning">Too many submissions from your connection. Please try again later.</div>{% endif %}
+      {% if enquiry_form.non_field_errors %}<div class="alert alert-error">{{ enquiry_form.non_field_errors }}</div>{% endif %}
+
+      <form method="post" action="{% url 'request_quote' %}">
+        {% csrf_token %}
+        <div class="field">
+          <label for="eq-name">Full name *</label>
+          <input class="input" id="eq-name" name="name" required value="{{ enquiry_form.name.value|default:'' }}">
+          {% if enquiry_form.name.errors %}<p class="error-text">{{ enquiry_form.name.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label for="eq-email">Email *</label>
+          <input class="input" type="email" id="eq-email" name="email" required value="{{ enquiry_form.email.value|default:'' }}">
+          {% if enquiry_form.email.errors %}<p class="error-text">{{ enquiry_form.email.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label for="eq-phone">Phone</label>
+          <input class="input" id="eq-phone" name="phone" placeholder="+254 7XX XXX XXX">
+        </div>
+        <div class="field">
+          <label for="eq-company">Company / organisation</label>
+          <input class="input" id="eq-company" name="company">
+        </div>
+        <div class="field">
+          <label for="eq-message">Your requirements *</label>
+          <textarea class="input" id="eq-message" name="message" rows="4" required></textarea>
+        </div>
+        <input type="hidden" name="services_text" value="{{ service.title }}">
+        <button type="submit" class="btn btn-primary" style="width:100%">Send enquiry</button>
+        <p class="small muted text-center mt-1" style="margin-bottom:0">Or call us on <a href="tel:{{ company.phone }}">{{ company.phone }}</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+{% if other_services %}
+<section style="background:var(--bg-soft)" class="section-tight">
+  <div class="container" style="padding-block:2.5rem">
+    <h3 class="mb-2">Other services</h3>
+    <div class="grid-3">
+      {% for other in other_services %}
+        <a href="{% url 'service_detail' other.slug %}" class="card card-pad card-hover" style="text-decoration:none;color:inherit">
+          <i class="fa-solid {{ other.icon|default:'fa-gear' }}" style="color:var(--brand-600)"></i>
+          <strong style="display:block;margin-top:.4rem;font-size:.92rem">{{ other.title }}</strong>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

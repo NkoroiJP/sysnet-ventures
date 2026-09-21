@@ -1,280 +1,90 @@
 {% extends 'billing/base_dashboard.html' %}
-{% load humanize %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<form method="post" novalidate>
+  {% csrf_token %}
 
-{% block dashboard_content %}
-<div class="bg-white shadow rounded-lg p-6">
-    <div class="border-b border-gray-200 pb-4 mb-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">{{ title }}</h3>
+  <div class="card card-pad mb-2">
+    <div class="grid-2" style="gap:0 1rem">
+      <div class="field">
+        <label>Client *</label>
+        <select class="input" name="client" required>
+          <option value="">— Select client —</option>
+          {% for client in clients %}
+            <option value="{{ client.pk }}" {% if builder.client.value == client.pk|stringformat:'s' %}selected{% endif %}>{{ client.name }}</option>
+          {% endfor %}
+        </select>
+        {% if builder.client.errors %}<p class="error-text">{{ builder.client.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label>Issue date *</label>
+        <input class="input" type="date" name="issue_date" value="{{ builder.issue_date.value|default:today|date:'Y-m-d' }}" required>
+      </div>
     </div>
-
-    {% if form.errors or formset.errors %}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle text-red-400"></i>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">Please correct the errors below</h3>
-            </div>
-        </div>
+    <div class="grid-2" style="gap:0 1rem">
+      <div class="field">
+        <label>Due date *</label>
+        <input class="input" type="date" name="due_date" value="{{ builder.due_date.value|default:'' }}" required>
+        {% if builder.due_date.errors %}<p class="error-text">{{ builder.due_date.errors.0 }}</p>{% endif %}
+      </div>
     </div>
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-
-        <!-- Main invoice info -->
-        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-4 mb-8">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Customer</label>
-                <div class="flex gap-2 items-center">
-                    {{ form.customer }}
-                    <button type="button" id="add-customer-btn"
-                        class="shrink-0 px-3 py-2 text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-md hover:bg-brand-100"
-                        title="Add a new customer">+ New</button>
-                </div>
-                {{ form.customer.errors }}
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Date</label>
-                {{ form.date }}
-                {{ form.date.errors }}
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Due Date</label>
-                {{ form.due_date }}
-                {{ form.due_date.errors }}
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                {{ form.status }}
-                {{ form.status.errors }}
-            </div>
-        </div>
-
-        <!-- Tax -->
-        <div class="sm:w-1/4 mb-8">
-            <label class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
-            {{ form.tax_rate }}
-            {{ form.tax_rate.errors }}
-        </div>
-
-        <!-- Line items -->
-        <div class="flex justify-between items-center mb-4">
-            <h4 class="text-md font-medium text-gray-900">Items</h4>
-            <button type="button" id="add-row-btn" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-brand-700 bg-brand-50 border border-brand-200 rounded-md hover:bg-brand-100">
-                <i class="fas fa-plus mr-1"></i> Add Item
-            </button>
-        </div>
-        {{ formset.management_form }}
-
-        <div id="formset-container" class="space-y-4">
-            {% for f in formset %}
-            <div class="flex flex-wrap sm:flex-nowrap gap-4 items-start border p-4 rounded-md bg-gray-50 relative formset-row{% if f.instance.pk and f.instance.DELETE %} hidden{% endif %}">
-                {{ f.id }}
-                <div class="w-full sm:w-1/4">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Product / Service</label>
-                    {{ f.product }}
-                    {{ f.product.errors }}
-                </div>
-                <div class="w-full sm:w-1/3">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                    {{ f.description }}
-                    {{ f.description.errors }}
-                </div>
-                <div class="w-full sm:w-1/12">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Qty</label>
-                    {{ f.quantity }}
-                    {{ f.quantity.errors }}
-                </div>
-                <div class="w-full sm:w-1/6">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Unit Price</label>
-                    {{ f.unit_price }}
-                    {{ f.unit_price.errors }}
-                </div>
-                <div class="w-full sm:w-1/6 text-right">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Line Total</label>
-                    <p class="js-line-total pt-2 text-sm font-bold text-gray-700">{{ company.currency }} 0.00</p>
-                </div>
-                <div class="flex items-start pt-6">
-                    <label class="inline-flex items-center text-sm text-red-500 hover:text-red-600 cursor-pointer" title="Remove line">
-                        {{ f.DELETE }} <span class="ml-1 hidden sm:inline">&times;</span>
-                    </label>
-                </div>
-                {{ f.non_field_errors }}
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Totals summary -->
-        <div class="mt-6 flex justify-end">
-            <div class="w-full sm:w-72 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">Subtotal</span>
-                    <span id="js-subtotal" class="font-bold text-gray-900">{{ company.currency }} 0.00</span>
-                </div>
-                <div class="flex justify-between text-sm js-tax-row">
-                    <span class="text-gray-500">Tax (<span id="js-tax-rate">0</span>%)</span>
-                    <span id="js-tax-amount" class="font-bold text-gray-900">{{ company.currency }} 0.00</span>
-                </div>
-                <div class="flex justify-between text-base border-t border-gray-200 pt-2">
-                    <span class="font-bold text-gray-900">Total</span>
-                    <span id="js-grand-total" class="font-black text-brand-700">{{ company.currency }} 0.00</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notes -->
-        <div class="mt-6">
-            <label class="block text-sm font-medium text-gray-700">Notes / Payment Instructions</label>
-            {{ form.notes }}
-            {{ form.notes.errors }}
-        </div>
-
-        <div class="flex justify-end pt-6 border-t mt-6">
-            <a href="{% url 'invoice_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">Cancel</a>
-            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">Save Invoice</button>
-        </div>
-    </form>
-</div>
-
-<!-- Inline customer creation modal -->
-<div id="customer-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900/50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Add Customer</h3>
-            <form id="customer-modal-form">
-                {% csrf_token %}
-                <div class="space-y-3">
-                    <input type="text" name="name" placeholder="Full name or company *" required
-                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                    <input type="email" name="email" placeholder="Email"
-                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                    <input type="text" name="phone" placeholder="Phone"
-                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                    <textarea name="address" rows="2" placeholder="Address"
-                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
-                </div>
-                <p id="customer-modal-error" class="hidden text-xs text-red-600 mt-2"></p>
-                <div class="flex justify-end pt-4">
-                    <button type="button" id="customer-modal-cancel" class="py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2">Cancel</button>
-                    <button type="submit" class="py-2 px-4 rounded-md text-sm font-medium text-white bg-brand-600 hover:bg-brand-700">Add &amp; Select</button>
-                </div>
-            </form>
-        </div>
+    <div class="grid-2" style="gap:0 1rem">
+      <div class="field">
+        <label>Notes</label>
+        <textarea class="input" name="notes" rows="2">{{ builder.notes.value|default:'' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Terms</label>
+        <textarea class="input" name="terms" rows="2">{{ builder.terms.value|default:'' }}</textarea>
+      </div>
     </div>
-</div>
+  </div>
+
+  <div class="card mb-2">
+    <div class="card-pad flex-between" style="border-bottom:1px solid var(--line)">
+      <h3 style="margin:0;font-size:1rem">Line items</h3>
+      <button type="button" class="btn btn-outline btn-sm" data-add-line><i class="fa-solid fa-plus"></i> Add line</button>
+    </div>
+    <div class="table-wrap" data-lines>
+      <table class="data">
+        <thead>
+          <tr>
+            <th style="min-width:14rem">Item / description</th><th>Unit</th><th>Qty</th><th>Unit price (KSh)</th>
+            <th>VAT mode</th><th>Discount %</th><th>Tax category</th>
+            <th class="num">Net</th><th class="num">VAT</th><th class="num">Total</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <input type="hidden" name="lines-count" value="0">
+    </div>
+    <div class="card-pad" style="background:var(--bg-soft)">
+      <div class="flex" style="justify-content:flex-end;gap:2rem;flex-wrap:wrap">
+        <div class="text-right"><div class="small muted">Net subtotal</div><strong id="sum-net">0.00</strong></div>
+        <div class="text-right"><div class="small muted">VAT</div><strong id="sum-vat">0.00</strong></div>
+        <div class="text-right"><div class="small muted">Total (KSh)</div><strong id="sum-total" style="font-size:1.2rem">0.00</strong></div>
+      </div>
+      <p class="small muted mt-1 text-right">Totals are recalculated and validated server-side on save.</p>
+    </div>
+  </div>
+
+  <div class="flex" style="gap:.6rem">
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save as draft</button>
+    <a href="{% url 'invoice_list' %}" class="btn btn-ghost">Cancel</a>
+  </div>
+</form>
 
 <script>
-(function () {
-    const CURRENCY = '{{ company.currency|escapejs }}';
-    const formsetContainer = document.getElementById('formset-container');
-    const addRowBtn = document.getElementById('add-row-btn');
-    const taxRateInput = document.querySelector('input[name="tax_rate"]');
-    const prefix = document.querySelector('#formset-container input[name^="items"]')
-        ? document.querySelector('#formset-container input[name^="items"]').name.split('-')[0] : 'items';
-    const totalForms = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
-    const emptyFormTemplate = formsetContainer.children[0] ? formsetContainer.children[0].cloneNode(true) : null;
-
-    function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-    function fmt(n) { return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
-    function recalc() {
-        let subtotal = 0;
-        formsetContainer.querySelectorAll('.formset-row').forEach(row => {
-            if (row.classList.contains('hidden') || row.classList.contains('js-empty')) return;
-            const qty = num(row.querySelector('input[name$="-quantity"]')?.value);
-            const price = num(row.querySelector('input[name$="-unit_price"]')?.value);
-            const line = qty * price;
-            subtotal += line;
-            const lt = row.querySelector('.js-line-total');
-            if (lt) lt.textContent = `${CURRENCY} ${fmt(line)}`;
-        });
-        const rate = num(taxRateInput ? taxRateInput.value : 0);
-        const tax = subtotal * rate / 100;
-        document.getElementById('js-subtotal').textContent = `${CURRENCY} ${fmt(subtotal)}`;
-        document.getElementById('js-tax-amount').textContent = `${CURRENCY} ${fmt(tax)}`;
-        document.getElementById('js-tax-rate').textContent = rate;
-        document.getElementById('js-grand-total').textContent = `${CURRENCY} ${fmt(subtotal + tax)}`;
-    }
-
-    function bindRow(row) {
-        const product = row.querySelector('select[name$="-product"]');
-        const qty = row.querySelector('input[name$="-quantity"]');
-        const price = row.querySelector('input[name$="-unit_price"]');
-        const desc = row.querySelector('input[name$="-description"]');
-        const del = row.querySelector('input[name$="-DELETE"]');
-
-        if (product) product.addEventListener('change', function () {
-            if (!this.value) { if (price) price.value = ''; return; }
-            fetch(`/billing/api/product/${this.value}/`)
-                .then(r => r.json())
-                .then(data => {
-                    if (price) price.value = data.price;
-                    if (desc) desc.value = data.description ? `${data.name} - ${data.description}` : data.name;
-                    recalc();
-                })
-                .catch(() => {});
-        });
-        [qty, price].forEach(el => el && el.addEventListener('input', recalc));
-        if (del) del.addEventListener('change', function () {
-            row.classList.toggle('hidden', this.checked);
-            recalc();
-        });
-    }
-
-    if (addRowBtn && emptyFormTemplate) {
-        addRowBtn.addEventListener('click', function () {
-            const index = parseInt(totalForms.value, 10);
-            const newRow = emptyFormTemplate.cloneNode(true);
-            newRow.classList.remove('hidden');
-            newRow.innerHTML = newRow.innerHTML.replaceAll(`${prefix}-__prefix__-`, `${prefix}-${index}-`);
-            newRow.classList.add('js-empty-new');
-            formsetContainer.appendChild(newRow);
-            bindRow(newRow);
-            totalForms.value = index + 1;
-            recalc();
-        });
-    }
-
-    if (taxRateInput) taxRateInput.addEventListener('input', recalc);
-
-    formsetContainer.querySelectorAll('.formset-row').forEach(bindRow);
-    recalc();
-
-    // --- Inline customer creation ---
-    const modal = document.getElementById('customer-modal');
-    const addCustomerBtn = document.getElementById('add-customer-btn');
-    const customerSelect = document.querySelector('select[name="customer"]');
-    if (addCustomerBtn && modal && customerSelect) {
-        addCustomerBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-        document.getElementById('customer-modal-cancel').addEventListener('click', () => modal.classList.add('hidden'));
-        document.getElementById('customer-modal-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const fd = new FormData(this);
-            fetch('{% url "customer_create_modal" %}', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value },
-                body: fd
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    const opt = document.createElement('option');
-                    opt.value = data.id; opt.textContent = data.name; opt.selected = true;
-                    customerSelect.appendChild(opt);
-                    modal.classList.add('hidden');
-                    this.reset();
-                } else {
-                    const err = document.getElementById('customer-modal-error');
-                    err.textContent = Object.values(data.errors || {}).flat().join(' ');
-                    err.classList.remove('hidden');
-                }
-            }).catch(() => {
-                const err = document.getElementById('customer-modal-error');
-                err.textContent = 'Could not save customer. Check required fields.';
-                err.classList.remove('hidden');
-            });
-        });
-    }
-})();
+  window.SYSNET_PRODUCTS = [
+    {% for product in products %}
+      {id: {{ product.pk }}, name: "{{ product.name|escapejs }}", price: "{{ product.selling_price }}", unit: "{{ product.unit|escapejs }}", tax_category_id: {% if product.tax_category %}{{ product.tax_category_id }}{% else %}null{% endif %}}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+  window.SYSNET_TAXES = [
+    {% for tax in tax_categories %}
+      {id: {{ tax.pk }}, name: "{{ tax.name|escapejs }}", rate: "{{ tax.rate_percent }}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
 </script>
 {% endblock %}

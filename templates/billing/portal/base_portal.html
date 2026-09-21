@@ -1,0 +1,55 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Portal{% endblock %} · {{ company.name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  {% block extra_head %}{% endblock %}
+</head>
+<body style="background:var(--bg-soft)">
+<header style="background:#fff;border-bottom:1px solid var(--line)">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;height:3.8rem;gap:1rem">
+    <a href="/" style="display:flex;align-items:center;gap:.6rem;text-decoration:none;color:var(--ink)">
+      {% if company.logo %}<img src="{{ company.logo.url }}" alt="" style="height:2.2rem;width:auto">{% else %}
+        <span style="display:inline-flex;width:2.2rem;height:2.2rem;border-radius:.55rem;background:var(--brand-600);color:#fff;align-items:center;justify-content:center;font-weight:800">S</span>{% endif %}
+      <span style="font-weight:700">Client Portal</span>
+    </a>
+    <nav class="portal-nav" style="display:none;gap:1.2rem" aria-label="Portal">
+      <a href="{% url 'portal_dashboard' %}" style="color:var(--ink-soft);font-weight:500">Dashboard</a>
+      <a href="{% url 'portal_payments' %}" style="color:var(--ink-soft);font-weight:500">Payments</a>
+      <a href="{% url 'portal_statement' %}" style="color:var(--ink-soft);font-weight:500">Statement</a>
+      <a href="{% url 'portal_service_request' %}" style="color:var(--ink-soft);font-weight:500">Support</a>
+    </nav>
+    <div class="flex" style="gap:.6rem;align-items:center">
+      <a href="{% url 'portal_profile' %}" class="btn btn-ghost btn-sm" title="Profile"><i class="fa-solid fa-user"></i></a>
+      <a href="{% url 'change_password' %}" class="btn btn-ghost btn-sm" title="Change password"><i class="fa-solid fa-key"></i></a>
+      <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}
+        <button class="btn btn-ghost btn-sm" type="submit" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main class="container" style="padding-block:1.75rem;min-height:calc(100vh - 9rem)">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" data-auto>{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer style="border-top:1px solid var(--line);background:#fff">
+  <div class="container flex-between" style="padding-block:1rem" class="small muted">
+    <span class="small muted">© {% now 'Y' %} {{ company.name }}</span>
+    <span class="small muted">Need help? {{ company.phone }}</span>
+  </div>
+</footer>
+
+<style>@media(min-width:48rem){.portal-nav{display:flex !important}}</style>
+<script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

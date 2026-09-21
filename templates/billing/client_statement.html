@@ -1,0 +1,40 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Statement — {{ client.name }}{% endblock %}
+{% block page_title %}Statement — {{ client.name }}{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <form method="get" class="flex" style="gap:.5rem;align-items:center">
+    <div class="field" style="margin:0"><label>From</label><input class="input" type="date" name="from" value="{{ date_from }}"></div>
+    <div class="field" style="margin:0"><label>To</label><input class="input" type="date" name="to" value="{{ date_to }}"></div>
+    <button class="btn btn-outline btn-sm" type="submit" style="margin-top:1.1rem">Apply</button>
+  </form>
+  <a href="{% url 'client_statement_pdf' client.pk %}?from={{ date_from }}&to={{ date_to }}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="small">{{ entry.date|date:'d M Y' }}</td>
+            <td><span class="badge {% if entry.type == 'Invoice' %}badge-blue{% elif entry.type == 'Receipt' %}badge-green{% else %}badge-purple{% endif %}">{{ entry.type }}</span></td>
+            <td class="mono small">{{ entry.ref }}</td>
+            <td class="small">{{ entry.description }}</td>
+            <td class="num">{% if entry.debit > 0 %}{{ entry.debit }}{% endif %}</td>
+            <td class="num">{% if entry.credit > 0 %}{{ entry.credit }}{% endif %}</td>
+            <td class="num"><strong>{{ entry.balance }}</strong></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7"><div class="empty-state"><p>No transactions for this period.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if entries %}
+<p class="small text-right mt-1">Closing balance: <strong>KSh {{ entries.last.balance }}</strong></p>
+{% endif %}
+{% endblock %}

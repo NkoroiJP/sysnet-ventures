@@ -1,0 +1,95 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<section class="hero section-tight">
+  <div class="container text-center" style="padding-block:3.5rem">
+    <span class="eyebrow">Request a Quote</span>
+    <h1>Tell us what you need</h1>
+    <p style="max-width:36rem;margin:0 auto;color:var(--ink-soft)">
+      Select the services or products you're interested in. Our team will respond with a structured
+      quotation — no obligation.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="max-width:44rem">
+    {% if sent %}
+      <div class="card card-pad text-center" style="padding:3rem 1.5rem">
+        <div style="width:4rem;height:4rem;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 1rem"><i class="fa-solid fa-check"></i></div>
+        <h2>Enquiry received</h2>
+        <p class="muted">Thank you — our team will review your requirements and respond with a quotation.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary mt-2">Back to home</a>
+      </div>
+    {% else %}
+      <div class="card card-pad">
+        {% if rate_limited %}
+          <div class="alert alert-warning">Too many submissions from your connection. Please try again later or call {{ company.phone }}.</div>
+        {% endif %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+          <div class="grid-2" style="gap:0 1rem">
+            <div class="field">
+              <label for="rq-name">Full name *</label>
+              <input class="input {% if form.name.errors %}error{% endif %}" id="rq-name" name="name" required value="{{ form.name.value|default:'' }}">
+              {% if form.name.errors %}<p class="error-text">{{ form.name.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="field">
+              <label for="rq-email">Email *</label>
+              <input class="input {% if form.email.errors %}error{% endif %}" type="email" id="rq-email" name="email" required value="{{ form.email.value|default:'' }}">
+              {% if form.email.errors %}<p class="error-text">{{ form.email.errors.0 }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:0 1rem">
+            <div class="field">
+              <label for="rq-phone">Phone</label>
+              <input class="input" id="rq-phone" name="phone" placeholder="+254 7XX XXX XXX" value="{{ form.phone.value|default:'' }}">
+            </div>
+            <div class="field">
+              <label for="rq-company">Company / organisation</label>
+              <input class="input" id="rq-company" name="company" value="{{ form.company.value|default:'' }}">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Services / products of interest</label>
+            <div class="grid-2" style="gap:.4rem">
+              {% for service in services %}
+                <label class="checkbox-row" style="border:1px solid var(--line);border-radius:.5rem;padding:.5rem .7rem;font-weight:500">
+                  <input type="checkbox" name="service_choice" value="{{ service.title }}"
+                    {% if service.title in form.services.value %}checked{% endif %}> {{ service.title }}
+                </label>
+              {% endfor %}
+            </div>
+            <p class="help">Select all that apply — or describe custom requirements below.</p>
+          </div>
+
+          <div class="field">
+            <label for="rq-message">Describe your requirements *</label>
+            <textarea class="input {% if form.message.errors %}error{% endif %}" id="rq-message" name="message" rows="5" required placeholder="Quantities, timelines, locations, current setup…">{{ form.message.value|default:'' }}</textarea>
+            {% if form.message.errors %}<p class="error-text">{{ form.message.errors.0 }}</p>{% endif %}
+          </div>
+
+          <input type="hidden" name="services_text" id="rq-services-json" value="{{ form.services_text.value|default:'' }}">
+          <button type="submit" class="btn btn-primary" style="width:100%">Submit enquiry</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  // Fold checked service checkboxes into the hidden `services` field on submit
+  (function () {
+    var form = document.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      var picked = [...form.querySelectorAll('input[name="service_choice"]:checked')].map(function (cb) { return cb.value; });
+      var hidden = document.getElementById('rq-services-json');
+      if (hidden) hidden.value = picked.join(', ');
+    });
+  })();
+</script>
+{% endblock %}

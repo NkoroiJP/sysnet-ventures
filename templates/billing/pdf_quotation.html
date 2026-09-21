@@ -1,69 +1,108 @@
-{% extends "billing/pdf_base.html" %}
-{% load humanize %}
-
-{% block doc_title %}QUOTATION{% endblock %}
-{% block doc_number %}{{ quotation.number }}{% endblock %}
-
-{% block doc_meta %}
-Date: {{ quotation.date|date:"M d, Y" }}{% if quotation.valid_until %}<br>Valid Until: {{ quotation.valid_until|date:"M d, Y" }}{% endif %}
-{% endblock %}
-
-{% block doc_badge %}
-<span class="status-badge {% if quotation.status == 'accepted' %}badge-green{% elif quotation.status == 'rejected' %}badge-red{% elif quotation.status == 'sent' %}badge-blue{% else %}badge-gray{% endif %}">{{ quotation.get_status_display }}</span>
-{% endblock %}
-
-{% block client_title %}Quotation For{% endblock %}
-{% block client_block %}
-<div class="client-name">{{ quotation.customer.name }}</div>
-<div class="client-info">
-    {% if quotation.customer.address %}{{ quotation.customer.address|linebreaksbr }}<br>{% endif %}
-    {% if quotation.customer.email %}{{ quotation.customer.email }}{% if quotation.customer.phone %} &middot; {{ quotation.customer.phone }}{% endif %}{% endif %}
+{% extends 'billing/pdf_base.html' %}
+{% block doc %}
+<div class="brand-header">
+  <table style="margin:0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="border:none;width:60%">
+        {% if company.logo %}
+          <img src="{{ company.logo.url }}" style="height:42pt" /><br/>
+        {% endif %}
+        <span class="brand-name">{{ company.name }}</span><br/>
+        <span class="brand-meta">
+          {% if company.physical_address %}{{ company.physical_address|linebreaksbr }}<br/>{% endif %}
+          Tel: {{ company.phone }}{% if company.email %} · {{ company.email }}{% endif %}{% if company.website %} · {{ company.website }}{% endif %}
+          {% if company.kra_pin %}<br/>KRA PIN: {{ company.kra_pin }}{% endif %}{% if company.vat_number %} · VAT No: {{ company.vat_number }}{% endif %}
+        </span>
+      </td>
+      <td style="border:none;text-align:right" class="num">
+        <div class="doc-title">QUOTATION</div>
+        <div class="doc-number">{{ quotation.number }}</div>
+        <div class="small muted">Issued: {{ quotation.issue_date|date:'d M Y' }}</div>
+        {% if quotation.valid_until %}<div class="small muted">Valid until: {{ quotation.valid_until|date:'d M Y' }}</div>{% endif %}
+      </td>
+    </tr>
+  </table>
 </div>
-{% endblock %}
 
-{% block content %}
-<table class="items">
-    <thead>
-        <tr>
-            <th style="width: 50%;">Description</th>
-            <th class="num" style="width: 10%;">Qty</th>
-            <th class="num" style="width: 20%;">Unit Price</th>
-            <th class="num" style="width: 20%;">Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in quotation.items.all %}
-        <tr class="{% cycle 'alt' '' %}">
-            <td>
-                <div class="item-desc">{{ item.description }}</div>
-                {% if item.product and item.product.name != item.description %}<div class="item-note">{{ item.product.product_type|capfirst }}</div>{% endif %}
-            </td>
-            <td class="text-center">{{ item.quantity }}</td>
-            <td class="text-right">{{ company.currency|default:"KES" }} {{ item.unit_price|floatformat:2|intcomma }}</td>
-            <td class="text-right">{{ company.currency|default:"KES" }} {{ item.total_price|floatformat:2|intcomma }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<table style="margin-top:0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="border:none;width:55%;background-color:#f8fafc;padding:8pt">
+      <strong>BILL TO</strong><br/>
+      {{ quotation.client.name }}<br/>
+      {% if quotation.client.contact_person %}Attn: {{ quotation.client.contact_person }}<br/>{% endif %}
+      {% if quotation.client.billing_address %}{{ quotation.client.billing_address|linebreaksbr }}<br/>{% endif %}
+      {% if quotation.client.email %}{{ quotation.client.email }}<br/>{% endif %}
+      {% if quotation.client.kra_pin %}PIN: {{ quotation.client.kra_pin }}{% endif %}
+    </td>
+    <td style="border:none;width:5%"></td>
+    <td style="border:none;width:40%;text-align:right">
+      <span class="badge">{{ quotation.get_status_display|upper }}</span>
+      {% if quotation.supersedes %}<div class="small muted" style="margin-top:4pt">Revision of {{ quotation.supersedes.number }}</div>{% endif %}
+    </td>
+  </tr>
 </table>
 
-<div class="totals">
-    <table>
-        <tr><td class="lbl">Subtotal:</td><td class="val">{{ company.currency|default:"KES" }} {{ quotation.subtotal|floatformat:2|intcomma }}</td></tr>
-        {% if quotation.tax_rate > 0 %}
-        <tr><td class="lbl">Tax ({{ quotation.tax_rate|floatformat:2 }}%):</td><td class="val">{{ company.currency|default:"KES" }} {{ quotation.tax_amount|floatformat:2|intcomma }}</td></tr>
-        {% endif %}
-        <tr class="grand"><td class="lbl">Total:</td><td class="val">{{ company.currency|default:"KES" }} {{ quotation.total_amount|floatformat:2|intcomma }}</td></tr>
-    </table>
-</div>
+<h3>Items</h3>
+<table cellpadding="0" cellspacing="0">
+  <thead>
+    <tr>
+      <th style="width:38%">Description</th>
+      <th style="width:10%">Unit</th>
+      <th style="width:10%" class="num">Qty</th>
+      <th style="width:14%" class="num">Unit price</th>
+      <th style="width:8%" class="num">Disc.</th>
+      <th style="width:10%" class="num">VAT</th>
+      <th style="width:10%" class="num">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr>
+      <td>
+        <strong>{{ line.description }}</strong>
+        {% if line.tax_rate_snapshot > 0 %}<div class="small muted">VAT {{ line.tax_rate_snapshot }}% · {{ line.pricing_mode }}</div>
+        {% elif line.tax_type_snapshot == 'zero' %}<div class="small muted">Zero rated</div>
+        {% elif line.tax_type_snapshot == 'exempt' %}<div class="small muted">Exempt</div>{% endif %}
+      </td>
+      <td>{{ line.unit|default:'—' }}</td>
+      <td class="num">{{ line.quantity }}</td>
+      <td class="num">{{ line.unit_price }}</td>
+      <td class="num">{% if line.discount_percent > 0 %}{{ line.discount_percent }}%{% else %}—{% endif %}</td>
+      <td class="num">{{ line.line_vat }}</td>
+      <td class="num"><strong>{{ line.line_total }}</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-{% if quotation.notes %}
-<div class="notes-box">
-    <div class="notes-title">Notes / Terms</div>
-    {{ quotation.notes|linebreaksbr }}
-</div>
-{% endif %}
-{% endblock %}
+<table class="totals" style="width:40%;margin-left:60%" cellpadding="0" cellspacing="0">
+  <tr><td class="muted">Net subtotal</td><td class="num">KSh {{ quotation.subtotal }}</td></tr>
+  {% if quotation.discount_total > 0 %}<tr><td class="muted">Discounts</td><td class="num">KSh {{ quotation.discount_total }}</td></tr>{% endif %}
+  <tr><td class="muted">VAT</td><td class="num">KSh {{ quotation.vat_total }}</td></tr>
+  <tr><td class="grand">TOTAL</td><td class="num grand">KSh {{ quotation.total }}</td></tr>
+</table>
 
-{% block footer_note %}
-<br>This quotation is valid for 30 days from the date of issue unless a different validity is stated above.
+{% if quotation.notes %}<h3>Notes</h3><p class="small">{{ quotation.notes|linebreaksbr }}</p>{% endif %}
+{% if quotation.delivery_info %}<h3>Delivery</h3><p class="small">{{ quotation.delivery_info|linebreaksbr }}</p>{% endif %}
+{% if quotation.terms %}<h3>Terms &amp; conditions</h3><p class="small">{{ quotation.terms|linebreaksbr }}</p>
+{% elif company.terms_and_conditions %}<h3>Terms &amp; conditions</h3><p class="small">{{ company.terms_and_conditions|linebreaksbr }}</p>{% endif %}
+
+<div class="info-box" style="margin-top:24pt">
+  <table style="margin:0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="border:none;width:50%">
+        <strong>Accepted by (client)</strong><br/><br/>
+        Signature: ______________________<br/><br/>
+        Name: ______________________<br/>
+        Date: ______________________
+      </td>
+      <td style="border:none;width:50%">
+        <strong>For {{ company.name }}</strong><br/><br/>
+        Authorized: ______________________<br/><br/>
+        Name: ______________________<br/>
+        Date: ______________________
+      </td>
+    </tr>
+  </table>
+</div>
 {% endblock %}

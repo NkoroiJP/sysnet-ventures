@@ -1,0 +1,84 @@
+{% extends 'billing/base_dashboard.html' %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block content %}
+
+{% if pending_submissions %}
+<div class="card mb-3" style="border-color:#f59e0b">
+  <div class="card-pad flex-between" style="border-bottom:1px solid var(--line)">
+    <h3 style="margin:0;font-size:1rem"><i class="fa-solid fa-hourglass-half" style="color:#b45309"></i> Awaiting verification ({{ pending_submissions|length }})</h3>
+    <span class="small muted">Client-submitted payments — verify before receipts are issued</span>
+  </div>
+  {% for submission in pending_submissions %}
+    <div style="padding:.9rem 1.25rem;border-bottom:1px solid var(--line)">
+      <div class="flex-between">
+        <div>
+          <strong>{{ submission.client.name }}</strong> · <span class="small">KSh {{ submission.amount }} via {{ submission.get_method_display }}</span>
+          {% if submission.transaction_ref %}<div class="small mono muted">Ref: {{ submission.transaction_ref }}</div>{% endif %}
+          {% if submission.note %}<div class="small muted">Note: {{ submission.note }}</div>{% endif %}
+        </div>
+        <div class="flex" style="gap:.5rem;align-items:center">
+          {% if submission.evidence %}
+            <a href="#" class="btn btn-ghost btn-sm" onclick="alert('Evidence: {{ submission.evidence.name|escapejs }}')">Evidence</a>
+          {% endif %}
+          <form method="post" action="{% url 'payment_verify' submission.pk %}" data-confirm="Confirm this payment? A receipt will be issued automatically.">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="approve">
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-check"></i> Verify</button>
+          </form>
+          <form method="post" action="{% url 'payment_verify' submission.pk %}" data-confirm="Reject this payment submission?">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="reject">
+            <button class="btn btn-ghost btn-sm" type="submit" style="color:#b91c1c">Reject</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-pad flex-between" style="border-bottom:1px solid var(--line)">
+    <h3 style="margin:0;font-size:1rem">All payments</h3>
+    <form method="get" class="flex" style="gap:.5rem">
+      <select class="input" name="status" style="width:auto">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-outline btn-sm" type="submit">Filter</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Number</th><th>Client</th><th>Method</th><th>Reference</th><th>Date</th><th>Status</th><th class="num">Amount</th><th class="num">Unallocated</th><th></th></tr></thead>
+      <tbody>
+        {% for payment in payments %}
+          <tr>
+            <td><a href="{% url 'payment_detail' payment.pk %}" class="mono"><strong>{{ payment.number }}</strong></a></td>
+            <td>{{ payment.client.name }}</td>
+            <td class="small">{{ payment.get_method_display }}</td>
+            <td class="small mono">{{ payment.transaction_ref|default:'—' }}</td>
+            <td class="small">{{ payment.paid_on|date:'d M Y' }}</td>
+            <td><span class="badge {% if payment.status == 'confirmed' %}badge-green{% elif payment.status == 'rejected' %}badge-red{% else %}badge-amber{% endif %}">{{ payment.get_status_display }}</span></td>
+            <td class="num"><strong>KSh {{ payment.amount }}</strong></td>
+            <td class="num small {% if payment.unallocated > 0 %}" style="color:#b45309;font-weight:700{% endif %}">KSh {{ payment.unallocated }}</td>
+            <td class="text-right">
+              {% if payment.status == 'confirmed' and payment.unallocated > 0 %}
+                <a href="{% url 'payment_allocate' payment.pk %}" class="btn btn-outline btn-sm">Allocate</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="9"><div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
+            <p>No payments recorded yet.</p>
+          </div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

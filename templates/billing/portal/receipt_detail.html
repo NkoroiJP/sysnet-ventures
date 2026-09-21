@@ -1,0 +1,25 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Receipt {{ receipt.number }}{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <div>
+    <h1 style="font-size:1.3rem;margin-bottom:.1rem">Receipt {{ receipt.number }}</h1>
+    <p class="small muted" style="margin:0">Issued {{ receipt.issued_at|date:'d M Y' }}</p>
+  </div>
+  <a href="{% url 'portal_receipt_pdf' receipt.pk %}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+</div>
+
+<div class="card card-pad" style="max-width:32rem">
+  <div class="text-center mb-2">
+    <div style="width:3.5rem;height:3.5rem;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto .8rem"><i class="fa-solid fa-check"></i></div>
+    <div style="font-size:1.6rem;font-weight:800;color:#065f46">KSh {{ receipt.amount }}</div>
+    <div class="small muted">Payment confirmed</div>
+  </div>
+  <div style="display:grid;gap:.5rem" class="small">
+    <div class="flex-between"><span class="muted">Payment reference</span><span class="mono">{{ receipt.payment.number }}</span></div>
+    <div class="flex-between"><span class="muted">Method</span><span>{{ receipt.payment.get_method_display }}</span></div>
+    {% if receipt.payment.transaction_ref %}<div class="flex-between"><span class="muted">Transaction</span><span class="mono">{{ receipt.payment.transaction_ref }}</span></div>{% endif %}
+    <div class="flex-between"><span class="muted">Paid on</span><span>{{ receipt.payment.paid_on|date:'d M Y' }}</span></div>
+  </div>
+</div>
+{% endblock %}

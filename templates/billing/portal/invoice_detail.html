@@ -1,0 +1,73 @@
+{% extends 'billing/portal/base_portal.html' %}
+{% block title %}Invoice {{ invoice.number }}{% endblock %}
+{% block content %}
+<div class="flex-between mb-2">
+  <div>
+    <h1 style="font-size:1.3rem;margin-bottom:.1rem">Invoice {{ invoice.number }}</h1>
+    <p class="small muted" style="margin:0">Issued {{ invoice.issue_date|date:'d M Y' }}{% if invoice.due_date %} · due {{ invoice.due_date|date:'d M Y' }}{% endif %}</p>
+  </div>
+  <a href="{% url 'portal_invoice_pdf' invoice.pk %}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+</div>
+
+{% if invoice.effective_status == 'overdue' %}<div class="alert alert-error">This invoice is <strong>overdue</strong>. Please settle it as soon as possible.</div>{% endif %}
+{% if invoice.balance_due > 0 and invoice.status != 'draft' %}
+  <div class="alert alert-info">
+    Balance due: <strong>KSh {{ invoice.balance_due }}</strong>.
+    <a href="{% url 'portal_submit_payment' %}">Submit a payment reference</a> once you have paid.
+  </div>
+{% endif %}
+
+<div class="grid-2" style="gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data" style="min-width:0">
+        <thead><tr><th>Description</th><th>Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td>
+                <strong class="small">{{ line.description }}</strong>
+                {% if line.tax_rate_snapshot > 0 %}<div class="small muted">VAT {{ line.tax_rate_snapshot }}%</div>{% endif %}
+              </td>
+              <td class="num">{{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}</td>
+              <td class="num">{{ line.unit_price }}</td>
+              <td class="num"><strong>{{ line.line_total }}</strong></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-pad" style="background:var(--bg-soft);border-top:1px solid var(--line)">
+      <div style="max-width:16rem;margin-left:auto;display:grid;gap:.3rem" class="small">
+        <div class="flex-between"><span class="muted">Subtotal</span><span>KSh {{ invoice.subtotal }}</span></div>
+        <div class="flex-between"><span class="muted">VAT</span><span>KSh {{ invoice.vat_total }}</span></div>
+        <div class="flex-between" style="border-top:2px solid var(--brand-600);padding-top:.35rem"><strong>Total</strong><strong style="font-size:1.1rem;color:var(--brand-700)">KSh {{ invoice.total }}</strong></div>
+        {% if invoice.amount_paid > 0 %}
+          <div class="flex-between"><span class="muted" style="color:#065f46">Paid</span><span style="color:#065f46">− KSh {{ invoice.amount_paid }}</span></div>
+          <div class="flex-between"><strong>Balance due</strong><strong style="color:var(--brand-700)">KSh {{ invoice.balance_due }}</strong></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:1.25rem">
+    {% if invoice.payment_instructions %}
+      <div class="card card-pad"><h3 style="font-size:1rem">How to pay</h3><p class="small muted" style="margin:0">{{ invoice.payment_instructions|linebreaksbr }}</p></div>
+    {% endif %}
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)"><h3 style="margin:0;font-size:1rem">Payments received</h3></div>
+      {% for alloc in allocations %}
+        <div class="flex-between" style="padding:.7rem 1.25rem;border-bottom:1px solid var(--line)">
+          <div class="small">
+            <strong class="mono">{{ alloc.payment.number }}</strong>
+            <div class="muted">{{ alloc.payment.paid_on|date:'d M Y' }} · {{ alloc.payment.get_method_display }}</div>
+          </div>
+          <strong class="small">KSh {{ alloc.amount }}</strong>
+        </div>
+      {% empty %}
+        <div class="empty-state"><p>No payments received yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
